@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.RestController;
 @SpringBootApplication
 @RestController
 @RequestMapping("/api")
-public class BackendApplication {
+public class StudyBuddyApplication {
     public static void main(String[] args) {
-        SpringApplication.run(BackendApplication.class, args);
+        SpringApplication.run(StudyBuddyApplication.class, args);
     }
 }
