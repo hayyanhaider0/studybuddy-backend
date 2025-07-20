@@ -40,7 +40,7 @@ public class AuthController {
             ApiResponse<UserDetails> res = new ApiResponse<>(true, "Logged in successfully.", user.get());
             return ResponseEntity.ok(res);
         } else {
-            ApiResponse<UserDetails> res = new ApiResponse<>(false, "Invalid password.", null);
+            ApiResponse<UserDetails> res = new ApiResponse<>(false, "Invalid username or password.", null);
             return ResponseEntity.status(401).body(res);
         }
     }
