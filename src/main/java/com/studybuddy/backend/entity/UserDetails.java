@@ -1,5 +1,7 @@
 package com.studybuddy.backend.entity;
 
+import java.time.LocalDateTime;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -15,10 +17,17 @@ public class UserDetails {
     private String username;
     private String password;
     private String role;
+    private boolean verified;
+
+    // User verification fields
+    private String verificationCode;
+    private LocalDateTime verificationCodeExpiry;
 
     public UserDetails(String email, String username, String password) {
         this.email = email;
         this.username = username;
         this.password = password;
+        this.role = "USER";
+        this.verified = false;
     }
 }
