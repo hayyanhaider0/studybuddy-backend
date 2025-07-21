@@ -16,7 +16,10 @@ import com.studybuddy.backend.repository.UserRepository;
 import com.studybuddy.backend.utility.JwtUtil;
 import com.studybuddy.backend.utility.VerificationCodeGenerator;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class AuthService {
     @Autowired
     private UserRepository userRepository;
@@ -64,12 +67,8 @@ public class AuthService {
      * @return User Details if passwords match.
      */
     public Optional<UserDetails> login(LoginRequest req) {
-        // Find the user in the database.
-        Optional<UserDetails> user = userRepository.findByUsername(req.getLogin());
-        if (user.isEmpty())
-            user = userRepository.findByEmail(req.getLogin());
-        // Return the user if passwords match.
-        return user.filter(u -> passwordEncoder.matches(req.getPassword(), u.getPassword()));
+        return userRepository.findByUsername(req.getLogin()).or(() -> userRepository.findByEmail(req.getLogin()))
+                .filter(u -> passwordEncoder.matches(req.getPassword(), u.getPassword()));
     }
 
     /**
@@ -167,5 +166,33 @@ public class AuthService {
 
         // Return tokens with user info.
         return new AuthResponse(newAccessToken, newRefreshToken, user.getEmail(), username);
+    }
+
+    /**
+     * Sends a verification code to the user's email if they try to login but are
+     * unverified.
+     * 
+     * @param user - The user to send the verificaition code to.
+     */
+    public void handleUnverifiedUser(UserDetails user) {
+        try {
+            resendVerificationCode(user.getEmail());
+        } catch (Exception e) {
+            log.error("Failed to resend verification code during login", e);
+        }
+    }
+
+    /**
+     * Generates access and refresh tokens for users who have successfully logged
+     * in.
+     * 
+     * @param user - User who has logged in.
+     * @return A response that contains the user's tokens, email, and username.
+     */
+    public AuthResponse generateTokensForUser(UserDetails user) {
+        String username = user.getUsername();
+        String accessToken = jwtUtil.generateAccessToken(username);
+        String refreshToken = jwtUtil.generateRefreshToken(username);
+        return new AuthResponse(accessToken, refreshToken, user.getEmail(), username);
     }
 }

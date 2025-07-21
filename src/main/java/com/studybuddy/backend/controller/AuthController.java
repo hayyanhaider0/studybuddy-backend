@@ -18,7 +18,6 @@ import com.studybuddy.backend.dto.SignupRequest;
 import com.studybuddy.backend.dto.VerificationRequest;
 import com.studybuddy.backend.entity.UserDetails;
 import com.studybuddy.backend.service.AuthService;
-import com.studybuddy.backend.utility.JwtUtil;
 
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -28,9 +27,6 @@ import jakarta.validation.Valid;
 public class AuthController {
     @Autowired
     private AuthService authService;
-
-    @Autowired
-    private JwtUtil jwtUtil;
 
     @PostMapping("/signup")
     @Operation(summary = "Register user", description = "Creates a new user with email, username, and password.")
@@ -75,41 +71,27 @@ public class AuthController {
     public ResponseEntity<ApiResponse<?>> login(@RequestBody LoginRequest req) {
         Optional<UserDetails> userOpt = authService.login(req);
 
-        // Check if the user exists
-        if (userOpt.isPresent()) {
-            UserDetails user = userOpt.get();
-            // If the user exists and is verified.
-            if (user.isVerified()) {
-                // Generate tokens.
-                String username = user.getUsername();
-                String accessToken = jwtUtil.generateAccessToken(username);
-                String refreshToken = jwtUtil.generateRefreshToken(username);
+        if (userOpt.isEmpty()) {
+            // Invalid username/password
+            ApiResponse<UserDetails> res = new ApiResponse<UserDetails>(false, "Invalid username or password", null);
+            return ResponseEntity.status(404).body(res);
+        }
 
-                AuthResponse authResponse = new AuthResponse(accessToken, refreshToken, user.getEmail(), username);
+        UserDetails user = userOpt.get();
 
-                ApiResponse<AuthResponse> res = new ApiResponse<>(true, "Logged in successfully.", authResponse);
-                return ResponseEntity.ok(res);
-            }
-
-            // If the user exists but is not verified, try to resend verification code
-            try {
-                authService.resendVerificationCode(user.getEmail());
-                System.out.println("Verification code resent to: " + user.getEmail()); // Debug log
-            } catch (Exception e) {
-                // Log the error but don't fail the login response
-                System.err.println("Failed to resend verification code during login: " + e.getMessage());
-                e.printStackTrace();
-            }
-
-            // If the user exists but is not verified.
+        if (!user.isVerified()) {
+            // Resend verification
+            authService.handleUnverifiedUser(user);
             Map<String, String> resData = Collections.singletonMap("email", user.getEmail());
             ApiResponse<?> res = new ApiResponse<>(true, "Please verify your email.", resData);
             return ResponseEntity.ok(res);
         }
 
-        // If the user does not exist or the password is wrong.
-        ApiResponse<UserDetails> res = new ApiResponse<>(false, "Invalid username or password.", null);
-        return ResponseEntity.status(401).body(res);
+        // If the user has logged in successfully, generate tokens.
+        AuthResponse authResponse = authService.generateTokensForUser(user);
+
+        ApiResponse<AuthResponse> res = new ApiResponse<AuthResponse>(true, "Logged in successfully.", authResponse);
+        return ResponseEntity.ok(res);
     }
 
     @PostMapping("/refresh")
