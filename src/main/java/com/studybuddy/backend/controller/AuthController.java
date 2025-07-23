@@ -14,8 +14,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.studybuddy.backend.dto.ApiResponse;
 import com.studybuddy.backend.dto.AuthResponse;
 import com.studybuddy.backend.dto.LoginRequest;
+import com.studybuddy.backend.dto.ResetPasswordRequest;
 import com.studybuddy.backend.dto.SignupRequest;
-import com.studybuddy.backend.dto.VerificationRequest;
+import com.studybuddy.backend.dto.CodeRequest;
 import com.studybuddy.backend.entity.UserDetails;
 import com.studybuddy.backend.service.AuthService;
 
@@ -39,7 +40,7 @@ public class AuthController {
 
     @PostMapping("/verify-email")
     @Operation(summary = "Verify user email", description = "Sends an email to the user's email to verify their account.")
-    public ResponseEntity<ApiResponse<Void>> verifyEmail(@RequestBody VerificationRequest req) {
+    public ResponseEntity<ApiResponse<Void>> verifyEmail(@RequestBody CodeRequest req) {
         boolean verified = authService.verifyEmail(req.getEmail(), req.getCode());
 
         if (verified) {
@@ -54,7 +55,7 @@ public class AuthController {
 
     @PostMapping("/resend-verification")
     @Operation(summary = "Resend verification code", description = "Resends a new 6-digit verification code to the user's email")
-    public ResponseEntity<ApiResponse<Void>> resendVerification(@RequestBody VerificationRequest req) {
+    public ResponseEntity<ApiResponse<Void>> resendVerification(@RequestBody CodeRequest req) {
         try {
             String email = req.getEmail();
             authService.resendVerificationCode(email);
@@ -66,8 +67,50 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/reset")
+    @Operation(summary = "Reset Study Buddy password", description = "Sends a 6-digit OTP allowing the user to reset their password")
+    public ResponseEntity<ApiResponse<?>> reset(@RequestBody Map<String, String> payload) {
+        try {
+            String login = payload.get("login");
+            String email = authService.sendResetCode(login);
+            Map<String, String> resData = Collections.singletonMap("email", email);
+            ApiResponse<?> res = new ApiResponse<>(true, "Reset code send successfully", resData);
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            ApiResponse<Void> res = new ApiResponse<>(false, e.getMessage(), null);
+            return ResponseEntity.badRequest().body(res);
+        }
+    }
+
+    @PostMapping("/verify-reset")
+    @Operation(summary = "Verified user's password reset code", description = "Compares the code entered with the reset code in the database, and checks its expiry time")
+    public ResponseEntity<ApiResponse<?>> verifyReset(@RequestBody CodeRequest req) {
+        try {
+            String email = req.getEmail();
+            authService.verifyResetCode(email, req.getCode());
+            ApiResponse<Void> res = new ApiResponse<>(true, "Code verified successfully", null);
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            ApiResponse<Void> res = new ApiResponse<>(false, "Invalid or expired reset code.", null);
+            return ResponseEntity.badRequest().body(res);
+        }
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "Resets the user's Study Buddy password", description = "Sets the user's password to a new password")
+    public ResponseEntity<ApiResponse<?>> resetPassword(@RequestBody ResetPasswordRequest req) {
+        try {
+            authService.resetPassword(req.getEmail(), req.getPassword(), req.getConfirmPassword());
+            ApiResponse<Void> res = new ApiResponse<>(true, "Password changed successfully", null);
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            ApiResponse<Void> res = new ApiResponse<>(false, "Password could not be changed", null);
+            return ResponseEntity.badRequest().body(res);
+        }
+    }
+
     @PostMapping("/login")
-    @Operation(summary = "Login to Study Buddy", description = "Logs a registered user in to Study Buddy with a JWT token.")
+    @Operation(summary = "Login to Study Buddy", description = "Logs a registered user in to Study Buddy with a JWT token")
     public ResponseEntity<ApiResponse<?>> login(@RequestBody LoginRequest req) {
         Optional<UserDetails> userOpt = authService.login(req);
 

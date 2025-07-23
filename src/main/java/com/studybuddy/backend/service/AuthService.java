@@ -57,7 +57,7 @@ public class AuthService {
         userRepository.save(user);
 
         // Send verification email.
-        emailService.sendVerificationEmail(req.getEmail(), code);
+        emailService.sendCodeEmail(req.getEmail(), code, "Verification");
     }
 
     /**
@@ -127,7 +127,7 @@ public class AuthService {
         Optional<UserDetails> userOpt = userRepository.findByEmail(email);
 
         if (userOpt.isEmpty())
-            throw new RuntimeException("User not found, try a different email.");
+            throw new RuntimeException("User not found, please try a different email.");
         if (userOpt.get().isVerified())
             throw new RuntimeException("User already verified.");
 
@@ -139,7 +139,85 @@ public class AuthService {
         user.setVerificationCodeExpiry(newExpiry);
 
         userRepository.save(user);
-        emailService.sendVerificationEmail(email, newCode);
+        emailService.sendCodeEmail(email, newCode, "Verification");
+    }
+
+    /**
+     * Sends a 6-digit OTP allowing the user to reset their password.
+     * 
+     * @param login - User's username or email.
+     */
+    public String sendResetCode(String login) {
+        Optional<UserDetails> userOpt = userRepository.findByEmail(login)
+                .or(() -> userRepository.findByUsername(login));
+
+        if (userOpt.isEmpty())
+            throw new RuntimeException("User not found. Please try a different email or username.");
+
+        UserDetails user = userOpt.get();
+        String code = codeGenerator.generateCode();
+        LocalDateTime expiry = LocalDateTime.now().plusHours(1);
+
+        user.setResetCode(code);
+        user.setResetCodeExpiry(expiry);
+        userRepository.save(user);
+
+        String email = user.getEmail();
+        emailService.sendCodeEmail(email, code, "Reset");
+
+        return email;
+    }
+
+    /**
+     * Verifies the reset code entered by the user with the code stored in the
+     * database.
+     * 
+     * @param email - Email of the user.
+     * @param code  - Code entered by the user.
+     * @return True if the code entered is correct.
+     */
+    public boolean verifyResetCode(String email, String code) {
+        Optional<UserDetails> userOpt = userRepository.findByEmail(email);
+
+        UserDetails user = userOpt.get();
+
+        if (user == null)
+            throw new RuntimeException("User not found");
+
+        if (user.getResetCode() != null && user.getResetCode().equals(code)
+                && user.getResetCodeExpiry().isAfter(LocalDateTime.now())) {
+            user.setResetCode(null);
+            user.setResetCodeExpiry(null);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Sets the user's password to the new password entered by the user.
+     * 
+     * @param email           - Email of the user.
+     * @param password        - New password entered by the user.
+     * @param confirmPassword - Confirm password field entered by the user.
+     */
+    public void resetPassword(String email, String password, String confirmPassword) {
+        if (!password.equals(confirmPassword))
+            throw new RuntimeException("Password and confirm password must be the same.");
+
+        Optional<UserDetails> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty())
+            throw new RuntimeException("User not found.");
+
+        UserDetails user = userOpt.get();
+
+        if (passwordEncoder.matches(password, user.getPassword()))
+            throw new RuntimeException("New password can not be the same as the old password.");
+
+        String newEncodedPassword = passwordEncoder.encode(password);
+        user.setPassword(newEncodedPassword);
+
+        userRepository.save(user);
     }
 
     /**

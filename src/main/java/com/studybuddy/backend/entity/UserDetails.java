@@ -23,6 +23,10 @@ public class UserDetails {
     private String verificationCode;
     private LocalDateTime verificationCodeExpiry;
 
+    // Password reset fields
+    private String resetCode;
+    private LocalDateTime resetCodeExpiry;
+
     public UserDetails(String email, String username, String password) {
         this.email = email;
         this.username = username;

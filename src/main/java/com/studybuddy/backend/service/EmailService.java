@@ -1,6 +1,7 @@
 package com.studybuddy.backend.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -10,17 +11,24 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
-    public void sendVerificationEmail(String email, String code) {
+    @Value("${STUDY_BUDDY_USERNAME}")
+    private String senderEmail;
+
+    public void sendCodeEmail(String email, String code, String purpose) {
         try {
             SimpleMailMessage msg = new SimpleMailMessage();
             msg.setTo(email);
-            msg.setSubject("'" + code + "' is your Study Buddy Verification Code.");
-            msg.setText("Your verification code for Study Buddy is: " + code + ". This code will expire in 5 minutes.");
-            msg.setFrom("kaijugami@gmail.com");
+            String subject = "'" + code + "' is your Study Buddy " + purpose + " Code.";
+            String text = "Your " + purpose.toLowerCase() + " code for Study Buddy is: " + code +
+                    ". This code will expire in "
+                    + (purpose.equalsIgnoreCase("Verification") ? "5 minutes." : "1 hour.");
+            msg.setSubject(subject);
+            msg.setText(text);
+            msg.setFrom(senderEmail);
 
             mailSender.send(msg);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to send verification email.");
+            throw new RuntimeException("Failed to send verification email.", e);
         }
     }
 }
