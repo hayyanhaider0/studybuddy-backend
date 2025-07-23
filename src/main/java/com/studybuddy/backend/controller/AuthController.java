@@ -1,9 +1,6 @@
 package com.studybuddy.backend.controller;
 
-import java.util.Collections;
 import java.util.Map;
-import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,7 +14,6 @@ import com.studybuddy.backend.dto.LoginRequest;
 import com.studybuddy.backend.dto.ResetPasswordRequest;
 import com.studybuddy.backend.dto.SignupRequest;
 import com.studybuddy.backend.dto.CodeRequest;
-import com.studybuddy.backend.entity.UserDetails;
 import com.studybuddy.backend.service.AuthService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,131 +28,74 @@ public class AuthController {
     @PostMapping("/signup")
     @Operation(summary = "Register user", description = "Creates a new user with email, username, and password.")
     public ResponseEntity<ApiResponse<?>> signup(@Valid @RequestBody SignupRequest req) {
-        authService.signup(req);
-        Map<String, String> resData = Collections.singletonMap("email", req.getEmail());
-        ApiResponse<?> res = new ApiResponse<>(true, "User registered successfully!", resData);
+        Map<String, String> resData = authService.signup(req);
+        ApiResponse<?> res = new ApiResponse<>(true, "User registered successfully.", resData);
         return ResponseEntity.ok(res);
     }
 
     @PostMapping("/verify-email")
     @Operation(summary = "Verify user email", description = "Sends an email to the user's email to verify their account.")
     public ResponseEntity<ApiResponse<Void>> verifyEmail(@RequestBody CodeRequest req) {
-        boolean verified = authService.verifyEmail(req.getEmail(), req.getCode());
-
-        if (verified) {
-            ApiResponse<Void> res = new ApiResponse<>(true, "User verified successfully.", null);
-            return ResponseEntity.ok(res);
-        } else {
-            ApiResponse<Void> res = new ApiResponse<Void>(false,
-                    "Invalid code or the code has expired. Please retry by resending code.", null);
-            return ResponseEntity.badRequest().body(res);
-        }
+        authService.verifyEmail(req.getEmail(), req.getCode());
+        ApiResponse<Void> res = new ApiResponse<>(true, "User verified successfully.", null);
+        return ResponseEntity.ok(res);
     }
 
     @PostMapping("/resend-verification")
     @Operation(summary = "Resend verification code", description = "Resends a new 6-digit verification code to the user's email")
     public ResponseEntity<ApiResponse<Void>> resendVerification(@RequestBody CodeRequest req) {
-        try {
-            String email = req.getEmail();
-            authService.resendVerificationCode(email);
-            ApiResponse<Void> res = new ApiResponse<>(true, "Verification code resent successfully.", null);
-            return ResponseEntity.ok(res);
-        } catch (Exception e) {
-            ApiResponse<Void> res = new ApiResponse<Void>(false, e.getMessage(), null);
-            return ResponseEntity.badRequest().body(res);
-        }
+        authService.resendVerificationCode(req.getEmail());
+        ApiResponse<Void> res = new ApiResponse<>(true, "Verification code resent successfully.", null);
+        return ResponseEntity.ok(res);
     }
 
     @PostMapping("/reset")
     @Operation(summary = "Reset Study Buddy password", description = "Sends a 6-digit OTP allowing the user to reset their password")
     public ResponseEntity<ApiResponse<?>> reset(@RequestBody Map<String, String> payload) {
-        try {
-            String login = payload.get("login");
-            String email = authService.sendResetCode(login);
-            Map<String, String> resData = Collections.singletonMap("email", email);
-            ApiResponse<?> res = new ApiResponse<>(true, "Reset code send successfully", resData);
-            return ResponseEntity.ok(res);
-        } catch (Exception e) {
-            ApiResponse<Void> res = new ApiResponse<>(false, e.getMessage(), null);
-            return ResponseEntity.badRequest().body(res);
-        }
+        Map<String, String> resData = authService.sendResetCode(payload.get("login"));
+        ApiResponse<?> res = new ApiResponse<>(true, "Reset code send successfully.", resData);
+        return ResponseEntity.ok(res);
     }
 
     @PostMapping("/verify-reset")
     @Operation(summary = "Verified user's password reset code", description = "Compares the code entered with the reset code in the database, and checks its expiry time")
     public ResponseEntity<ApiResponse<?>> verifyReset(@RequestBody CodeRequest req) {
-        try {
-            String email = req.getEmail();
-            authService.verifyResetCode(email, req.getCode());
-            ApiResponse<Void> res = new ApiResponse<>(true, "Code verified successfully", null);
-            return ResponseEntity.ok(res);
-        } catch (Exception e) {
-            ApiResponse<Void> res = new ApiResponse<>(false, "Invalid or expired reset code.", null);
-            return ResponseEntity.badRequest().body(res);
-        }
+        authService.verifyResetCode(req.getEmail(), req.getCode());
+        ApiResponse<Void> res = new ApiResponse<>(true, "Code verified successfully.", null);
+        return ResponseEntity.ok(res);
     }
 
     @PostMapping("/reset-password")
     @Operation(summary = "Resets the user's Study Buddy password", description = "Sets the user's password to a new password")
     public ResponseEntity<ApiResponse<?>> resetPassword(@RequestBody ResetPasswordRequest req) {
-        try {
-            authService.resetPassword(req.getEmail(), req.getPassword(), req.getConfirmPassword());
-            ApiResponse<Void> res = new ApiResponse<>(true, "Password changed successfully", null);
-            return ResponseEntity.ok(res);
-        } catch (Exception e) {
-            ApiResponse<Void> res = new ApiResponse<>(false, "Password could not be changed", null);
-            return ResponseEntity.badRequest().body(res);
-        }
+        authService.resetPassword(req.getEmail(), req.getPassword(), req.getConfirmPassword());
+        ApiResponse<Void> res = new ApiResponse<>(true, "Password changed successfully.", null);
+        return ResponseEntity.ok(res);
     }
 
     @PostMapping("/login")
     @Operation(summary = "Login to Study Buddy", description = "Logs a registered user in to Study Buddy with a JWT token")
     public ResponseEntity<ApiResponse<?>> login(@RequestBody LoginRequest req) {
-        Optional<UserDetails> userOpt = authService.login(req);
+        Object loginResult = authService.login(req);
 
-        if (userOpt.isEmpty()) {
-            // Invalid username/password
-            ApiResponse<UserDetails> res = new ApiResponse<UserDetails>(false, "Invalid username or password", null);
-            return ResponseEntity.status(404).body(res);
-        }
-
-        UserDetails user = userOpt.get();
-
-        if (!user.isVerified()) {
-            // Resend verification
-            authService.handleUnverifiedUser(user);
-            Map<String, String> resData = Collections.singletonMap("email", user.getEmail());
-            ApiResponse<?> res = new ApiResponse<>(true, "Please verify your email.", resData);
+        if (loginResult instanceof AuthResponse) {
+            ApiResponse<AuthResponse> res = new ApiResponse<>(true, "Logged in successfully.",
+                    (AuthResponse) loginResult);
+            return ResponseEntity.ok(res);
+        } else {
+            // Unverified user case - service returns email map
+            @SuppressWarnings("unchecked")
+            Map<String, String> emailData = (Map<String, String>) loginResult;
+            ApiResponse<?> res = new ApiResponse<>(true, "Please verify your email.", emailData);
             return ResponseEntity.ok(res);
         }
-
-        // If the user has logged in successfully, generate tokens.
-        AuthResponse authResponse = authService.generateTokensForUser(user);
-
-        ApiResponse<AuthResponse> res = new ApiResponse<AuthResponse>(true, "Logged in successfully.", authResponse);
-        return ResponseEntity.ok(res);
     }
 
     @PostMapping("/refresh")
     @Operation(summary = "Refresh access token", description = "Refreshes the user's access token to skip login.")
     public ResponseEntity<ApiResponse<?>> refresh(@RequestBody Map<String, String> req) {
-        String refreshToken = req.get("refreshToken");
-
-        // Check validity.
-        if (refreshToken == null || refreshToken.isEmpty()) {
-            ApiResponse<Map<String, String>> res = new ApiResponse<>(false, "Refresh token is expired", null);
-            return ResponseEntity.badRequest().body(res);
-        }
-
-        // If valid, send an ok response.
-        try {
-            AuthResponse authResponse = authService.refreshToken(refreshToken);
-            ApiResponse<AuthResponse> res = new ApiResponse<>(true, "Refresh token is expired", authResponse);
-            return ResponseEntity.ok(res);
-        } catch (Exception e) {
-            // Catch other errors.
-            ApiResponse<Void> res = new ApiResponse<>(false, "Invalid or expired refresh token", null);
-            return ResponseEntity.status(401).body(res);
-        }
+        AuthResponse authResponse = authService.refreshToken(req.get("refreshToken"));
+        ApiResponse<AuthResponse> res = new ApiResponse<>(true, "Token refreshed successfully.", authResponse);
+        return ResponseEntity.ok(res);
     }
 }

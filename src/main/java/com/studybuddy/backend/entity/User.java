@@ -1,0 +1,62 @@
+package com.studybuddy.backend.entity;
+
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Map;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import com.studybuddy.backend.enums.Role;
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@Document(collection = "users")
+public class User {
+    // Core auth
+    @Id
+    private String id;
+
+    private String email;
+    private String username;
+    private String passwordHash;
+    private boolean verified;
+    private Instant createdAt;
+    private Instant updatedAt;
+
+    // Account settings
+    private Role role;
+    private Map<String, Object> preferences;
+    private boolean notificationsEnabled;
+    private String timeZone;
+
+    // Device/Security
+    private ZonedDateTime lastLoginAt;
+    private int loginCount;
+    // private boolean twoFactorEnabled;
+    // private String[] devices;
+
+    // User verification fields
+    private String verificationCode;
+    private Instant verificationCodeExpiry;
+
+    // Password reset fields
+    private String resetCode;
+    private Instant resetCodeExpiry;
+
+    public User(String email, String username, String passwordHash) {
+        this.email = email;
+        this.username = username;
+        this.passwordHash = passwordHash;
+        this.role = Role.USER;
+        this.verified = false;
+
+        this.createdAt = Instant.now();
+        this.updatedAt = Instant.now();
+        this.timeZone = ZoneId.systemDefault().getId();
+    }
+}

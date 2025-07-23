@@ -4,10 +4,10 @@ import java.util.Optional;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
 
-import com.studybuddy.backend.entity.UserDetails;
+import com.studybuddy.backend.entity.User;
 
-public interface UserRepository extends MongoRepository<UserDetails, String> {
-    Optional<UserDetails> findByUsername(String username);
+public interface UserRepository extends MongoRepository<User, String> {
+    Optional<User> findByUsername(String username);
 
-    Optional<UserDetails> findByEmail(String email);
+    Optional<User> findByEmail(String email);
 }

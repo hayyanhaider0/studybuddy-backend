@@ -1,6 +1,8 @@
 package com.studybuddy.backend.service;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,8 +12,12 @@ import org.springframework.stereotype.Service;
 import com.studybuddy.backend.dto.AuthResponse;
 import com.studybuddy.backend.dto.LoginRequest;
 import com.studybuddy.backend.dto.SignupRequest;
-import com.studybuddy.backend.entity.UserDetails;
+import com.studybuddy.backend.entity.User;
+import com.studybuddy.backend.exception.InvalidRequestException;
+import com.studybuddy.backend.exception.InvalidTokenException;
 import com.studybuddy.backend.exception.ResourceAlreadyExistsException;
+import com.studybuddy.backend.exception.ResourceNotFoundException;
+import com.studybuddy.backend.exception.UserAlreadyVerifiedException;
 import com.studybuddy.backend.repository.UserRepository;
 import com.studybuddy.backend.utility.JwtUtil;
 import com.studybuddy.backend.utility.VerificationCodeGenerator;
@@ -36,21 +42,24 @@ public class AuthService {
     @Autowired
     private JwtUtil jwtUtil;
 
+    private final int SECONDS_TO_HOUR = 3600;
+    private final int SECONDS_TO_MINUTES = 60;
+
     /**
      * Allows the user to sign up using email and a username.
      * 
      * @param req - The sign up request.
      */
-    public void signup(SignupRequest req) {
+    public Map<String, String> signup(SignupRequest req) {
         checkUserExists(req.getEmail(), req.getUsername());
 
         String encodedPassword = passwordEncoder.encode(req.getPassword());
 
         // Generate verification code.
         String code = codeGenerator.generateCode();
-        LocalDateTime expiry = LocalDateTime.now().plusMinutes(5);
+        Instant expiry = Instant.now().plusSeconds(SECONDS_TO_MINUTES * 5);
 
-        UserDetails user = new UserDetails(req.getEmail(), req.getUsername(), encodedPassword);
+        User user = new User(req.getEmail(), req.getUsername(), encodedPassword);
         user.setVerificationCode(code);
         user.setVerificationCodeExpiry(expiry);
 
@@ -58,6 +67,8 @@ public class AuthService {
 
         // Send verification email.
         emailService.sendCodeEmail(req.getEmail(), code, "Verification");
+
+        return Collections.singletonMap("email", req.getEmail());
     }
 
     /**
@@ -66,24 +77,20 @@ public class AuthService {
      * @param req - The login request.
      * @return User Details if passwords match.
      */
-    public Optional<UserDetails> login(LoginRequest req) {
-        return userRepository.findByUsername(req.getLogin()).or(() -> userRepository.findByEmail(req.getLogin()))
-                .filter(u -> passwordEncoder.matches(req.getPassword(), u.getPassword()));
-    }
+    public Object login(LoginRequest req) {
+        Optional<User> userOpt = userRepository.findByUsername(req.getLogin())
+                .or(() -> userRepository.findByEmail(req.getLogin()));
+        User user = userOpt.orElseThrow(() -> new ResourceNotFoundException("User not found."));
 
-    /**
-     * Check if the user already exists in the database.
-     * 
-     * @param email    - Email entered in the request.
-     * @param username - Username enetered in the request.
-     */
-    private void checkUserExists(String email, String username) {
-        if (userRepository.findByEmail(email).isPresent()) {
-            throw new ResourceAlreadyExistsException("Email already exists.");
+        if (!passwordEncoder.matches(req.getPassword(), user.getPasswordHash()))
+            throw new InvalidRequestException("Invalid username or password.");
+
+        if (!user.isVerified()) {
+            handleUnverifiedUser(user);
+            return Collections.singletonMap("email", user.getEmail());
         }
-        if (userRepository.findByUsername(username).isPresent()) {
-            throw new ResourceAlreadyExistsException("Username already exists.");
-        }
+
+        return generateTokensForUser(user);
     }
 
     /**
@@ -93,29 +100,25 @@ public class AuthService {
      * @param code  - 6-digit verification code.
      * @return True if user exists and has been verified.
      */
-    public boolean verifyEmail(String email, String code) {
-        Optional<UserDetails> userOpt = userRepository.findByEmail(email);
+    public void verifyEmail(String email, String code) {
+        Optional<User> userOpt = userRepository.findByEmail(email);
 
-        if (userOpt.isEmpty())
-            return false;
+        User user = userOpt.orElseThrow(() -> new ResourceNotFoundException("User not found."));
 
-        UserDetails user = userOpt.get();
-
+        // Email already verified.
         if (user.isVerified())
-            return true;
+            return;
 
         // Check if code matches verification code.
-        if (user.getVerificationCode() != null && user.getVerificationCode().equals(code)
-                && user.getVerificationCodeExpiry().isAfter(LocalDateTime.now())) {
-            user.setVerified(true);
-            user.setVerificationCode(null);
-            user.setVerificationCodeExpiry(null);
+        if (user.getVerificationCode() == null || !user.getVerificationCode().equals(code)
+                || user.getVerificationCodeExpiry().isBefore(Instant.now()))
+            throw new InvalidRequestException("Invalid code or the code has expired.");
 
-            userRepository.save(user);
-            return true;
-        }
+        user.setVerified(true);
+        user.setVerificationCode(null);
+        user.setVerificationCodeExpiry(null);
 
-        return false;
+        userRepository.save(user);
     }
 
     /**
@@ -124,16 +127,14 @@ public class AuthService {
      * @param email - User's email.
      */
     public void resendVerificationCode(String email) {
-        Optional<UserDetails> userOpt = userRepository.findByEmail(email);
+        Optional<User> userOpt = userRepository.findByEmail(email);
 
-        if (userOpt.isEmpty())
-            throw new RuntimeException("User not found, please try a different email.");
-        if (userOpt.get().isVerified())
-            throw new RuntimeException("User already verified.");
+        User user = userOpt.orElseThrow(() -> new ResourceNotFoundException("User not found."));
+        if (user.isVerified())
+            throw new UserAlreadyVerifiedException("User is already verified.");
 
-        UserDetails user = userOpt.get();
         String newCode = codeGenerator.generateCode();
-        LocalDateTime newExpiry = LocalDateTime.now().plusMinutes(5);
+        Instant newExpiry = Instant.now().plusSeconds(SECONDS_TO_MINUTES * 5);
 
         user.setVerificationCode(newCode);
         user.setVerificationCodeExpiry(newExpiry);
@@ -147,16 +148,14 @@ public class AuthService {
      * 
      * @param login - User's username or email.
      */
-    public String sendResetCode(String login) {
-        Optional<UserDetails> userOpt = userRepository.findByEmail(login)
+    public Map<String, String> sendResetCode(String login) {
+        Optional<User> userOpt = userRepository.findByEmail(login)
                 .or(() -> userRepository.findByUsername(login));
 
-        if (userOpt.isEmpty())
-            throw new RuntimeException("User not found. Please try a different email or username.");
+        User user = userOpt.orElseThrow(() -> new ResourceNotFoundException("User not found."));
 
-        UserDetails user = userOpt.get();
         String code = codeGenerator.generateCode();
-        LocalDateTime expiry = LocalDateTime.now().plusHours(1);
+        Instant expiry = Instant.now().plusSeconds(SECONDS_TO_HOUR);
 
         user.setResetCode(code);
         user.setResetCodeExpiry(expiry);
@@ -165,7 +164,7 @@ public class AuthService {
         String email = user.getEmail();
         emailService.sendCodeEmail(email, code, "Reset");
 
-        return email;
+        return Collections.singletonMap("email", email);
     }
 
     /**
@@ -176,22 +175,19 @@ public class AuthService {
      * @param code  - Code entered by the user.
      * @return True if the code entered is correct.
      */
-    public boolean verifyResetCode(String email, String code) {
-        Optional<UserDetails> userOpt = userRepository.findByEmail(email);
+    public void verifyResetCode(String email, String code) {
+        Optional<User> userOpt = userRepository.findByEmail(email);
 
-        UserDetails user = userOpt.get();
+        User user = userOpt.orElseThrow(() -> new ResourceNotFoundException("User not found."));
 
-        if (user == null)
-            throw new RuntimeException("User not found");
+        if (user.getResetCode() == null || !user.getResetCode().equals(code)
+                || user.getResetCodeExpiry().isBefore(Instant.now()))
+            throw new InvalidRequestException("Invalid or expired reset code.");
 
-        if (user.getResetCode() != null && user.getResetCode().equals(code)
-                && user.getResetCodeExpiry().isAfter(LocalDateTime.now())) {
-            user.setResetCode(null);
-            user.setResetCodeExpiry(null);
-            return true;
-        }
+        user.setResetCode(null);
+        user.setResetCodeExpiry(null);
 
-        return false;
+        userRepository.save(user);
     }
 
     /**
@@ -203,19 +199,17 @@ public class AuthService {
      */
     public void resetPassword(String email, String password, String confirmPassword) {
         if (!password.equals(confirmPassword))
-            throw new RuntimeException("Password and confirm password must be the same.");
+            throw new InvalidRequestException("Password and confirm password must be the same.");
 
-        Optional<UserDetails> userOpt = userRepository.findByEmail(email);
-        if (userOpt.isEmpty())
-            throw new RuntimeException("User not found.");
+        Optional<User> userOpt = userRepository.findByEmail(email);
 
-        UserDetails user = userOpt.get();
+        User user = userOpt.orElseThrow(() -> new ResourceNotFoundException("User not found."));
 
-        if (passwordEncoder.matches(password, user.getPassword()))
-            throw new RuntimeException("New password can not be the same as the old password.");
+        if (passwordEncoder.matches(password, user.getPasswordHash()))
+            throw new InvalidRequestException("New password can not be the same as the old password.");
 
         String newEncodedPassword = passwordEncoder.encode(password);
-        user.setPassword(newEncodedPassword);
+        user.setPasswordHash(newEncodedPassword);
 
         userRepository.save(user);
     }
@@ -227,16 +221,20 @@ public class AuthService {
      * @return A new response with the user's new access and refresh tokens.
      */
     public AuthResponse refreshToken(String refreshToken) {
+        // Check incoming token validity.
+        if (refreshToken == null || refreshToken.isEmpty())
+            throw new ResourceNotFoundException("Refresh token not found.");
+
         // Extract username from refresh token.
         String username = jwtUtil.extractUsername(refreshToken);
 
         // Check token validity.
         if (!jwtUtil.validateToken(refreshToken, username))
-            throw new RuntimeException("Invalid or expired refresh token");
+            throw new InvalidTokenException("Invalid or expired refresh token");
 
         // Load user details.
-        UserDetails user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        Optional<User> userOpt = userRepository.findByUsername(username);
+        User user = userOpt.orElseThrow(() -> new ResourceNotFoundException("User not found."));
 
         // Generate new tokens.
         String newAccessToken = jwtUtil.generateAccessToken(username);
@@ -252,7 +250,7 @@ public class AuthService {
      * 
      * @param user - The user to send the verificaition code to.
      */
-    public void handleUnverifiedUser(UserDetails user) {
+    public void handleUnverifiedUser(User user) {
         try {
             resendVerificationCode(user.getEmail());
         } catch (Exception e) {
@@ -267,10 +265,25 @@ public class AuthService {
      * @param user - User who has logged in.
      * @return A response that contains the user's tokens, email, and username.
      */
-    public AuthResponse generateTokensForUser(UserDetails user) {
+    public AuthResponse generateTokensForUser(User user) {
         String username = user.getUsername();
         String accessToken = jwtUtil.generateAccessToken(username);
         String refreshToken = jwtUtil.generateRefreshToken(username);
         return new AuthResponse(accessToken, refreshToken, user.getEmail(), username);
+    }
+
+    /**
+     * Check if the user already exists in the database.
+     * 
+     * @param email    - Email entered in the request.
+     * @param username - Username enetered in the request.
+     */
+    private void checkUserExists(String email, String username) {
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new ResourceAlreadyExistsException("Email already exists.");
+        }
+        if (userRepository.findByUsername(username).isPresent()) {
+            throw new ResourceAlreadyExistsException("Username already exists.");
+        }
     }
 }
