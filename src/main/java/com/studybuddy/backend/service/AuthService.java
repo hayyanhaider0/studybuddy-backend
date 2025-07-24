@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.mongodb.DuplicateKeyException;
 import com.studybuddy.backend.dto.AuthResponse;
 import com.studybuddy.backend.dto.LoginRequest;
 import com.studybuddy.backend.dto.SignupRequest;
@@ -51,24 +52,38 @@ public class AuthService {
      * @param req - The sign up request.
      */
     public Map<String, String> signup(SignupRequest req) {
-        checkUserExists(req.getEmail(), req.getUsername());
+        final String normalizedEmail = normalizeString(req.getEmail());
+        final String normalizedUsername = normalizeString(req.getUsername());
 
+        checkUserExists(normalizedEmail, normalizedUsername);
         String encodedPassword = passwordEncoder.encode(req.getPassword());
 
         // Generate verification code.
         String code = codeGenerator.generateCode();
         Instant expiry = Instant.now().plusSeconds(SECONDS_TO_MINUTES * 5);
 
-        User user = new User(req.getEmail(), req.getUsername(), encodedPassword);
+        User user = new User(normalizedEmail, normalizedUsername, req.getUsername(), encodedPassword);
         user.setVerificationCode(code);
         user.setVerificationCodeExpiry(expiry);
 
-        userRepository.save(user);
+        // Check if the user already exists.
+        try {
+            userRepository.save(user);
+        } catch (DuplicateKeyException e) {
+            String msg = "User already exists";
+            String errMsg = e.getMessage().toLowerCase();
+
+            if (errMsg.contains("username"))
+                msg = "Username already exists.";
+            if (errMsg.contains("email"))
+                msg = "Email already exists.";
+            throw new ResourceAlreadyExistsException(msg);
+        }
 
         // Send verification email.
-        emailService.sendCodeEmail(req.getEmail(), code, "Verification");
+        emailService.sendCodeEmail(normalizedEmail, code, "Verification");
 
-        return Collections.singletonMap("email", req.getEmail());
+        return Collections.singletonMap("email", normalizedEmail);
     }
 
     /**
@@ -78,8 +93,10 @@ public class AuthService {
      * @return User Details if passwords match.
      */
     public Object login(LoginRequest req) {
-        Optional<User> userOpt = userRepository.findByUsername(req.getLogin())
-                .or(() -> userRepository.findByEmail(req.getLogin()));
+        final String login = normalizeString(req.getLogin());
+
+        Optional<User> userOpt = userRepository.findByUsername(login)
+                .or(() -> userRepository.findByEmail(login));
         User user = userOpt.orElseThrow(() -> new ResourceNotFoundException("User not found."));
 
         if (!passwordEncoder.matches(req.getPassword(), user.getPasswordHash()))
@@ -87,8 +104,12 @@ public class AuthService {
 
         if (!user.isVerified()) {
             handleUnverifiedUser(user);
-            return Collections.singletonMap("email", user.getEmail());
+            return Collections.singletonMap("email", normalizeString(user.getEmail()));
         }
+
+        user.setLoginCount(user.getLoginCount() + 1);
+        user.setLastLoginAt(Instant.now());
+        saveUpdatedUser(user);
 
         return generateTokensForUser(user);
     }
@@ -101,7 +122,9 @@ public class AuthService {
      * @return True if user exists and has been verified.
      */
     public void verifyEmail(String email, String code) {
-        Optional<User> userOpt = userRepository.findByEmail(email);
+        final String normalizedEmail = normalizeString(email);
+
+        Optional<User> userOpt = userRepository.findByEmail(normalizedEmail);
 
         User user = userOpt.orElseThrow(() -> new ResourceNotFoundException("User not found."));
 
@@ -114,11 +137,11 @@ public class AuthService {
                 || user.getVerificationCodeExpiry().isBefore(Instant.now()))
             throw new InvalidRequestException("Invalid code or the code has expired.");
 
+        // Update user
         user.setVerified(true);
         user.setVerificationCode(null);
         user.setVerificationCodeExpiry(null);
-
-        userRepository.save(user);
+        saveUpdatedUser(user);
     }
 
     /**
@@ -127,7 +150,9 @@ public class AuthService {
      * @param email - User's email.
      */
     public void resendVerificationCode(String email) {
-        Optional<User> userOpt = userRepository.findByEmail(email);
+        final String normalizedEmail = normalizeString(email);
+
+        Optional<User> userOpt = userRepository.findByEmail(normalizedEmail);
 
         User user = userOpt.orElseThrow(() -> new ResourceNotFoundException("User not found."));
         if (user.isVerified())
@@ -136,11 +161,12 @@ public class AuthService {
         String newCode = codeGenerator.generateCode();
         Instant newExpiry = Instant.now().plusSeconds(SECONDS_TO_MINUTES * 5);
 
+        // Update user
         user.setVerificationCode(newCode);
         user.setVerificationCodeExpiry(newExpiry);
+        saveUpdatedUser(user);
 
-        userRepository.save(user);
-        emailService.sendCodeEmail(email, newCode, "Verification");
+        emailService.sendCodeEmail(normalizedEmail, newCode, "Verification");
     }
 
     /**
@@ -149,17 +175,20 @@ public class AuthService {
      * @param login - User's username or email.
      */
     public Map<String, String> sendResetCode(String login) {
-        Optional<User> userOpt = userRepository.findByEmail(login)
-                .or(() -> userRepository.findByUsername(login));
+        final String normalizedLogin = normalizeString(login);
+
+        Optional<User> userOpt = userRepository.findByEmail(normalizedLogin)
+                .or(() -> userRepository.findByUsername(normalizedLogin));
 
         User user = userOpt.orElseThrow(() -> new ResourceNotFoundException("User not found."));
 
         String code = codeGenerator.generateCode();
         Instant expiry = Instant.now().plusSeconds(SECONDS_TO_HOUR);
 
+        // Update user
         user.setResetCode(code);
         user.setResetCodeExpiry(expiry);
-        userRepository.save(user);
+        saveUpdatedUser(user);
 
         String email = user.getEmail();
         emailService.sendCodeEmail(email, code, "Reset");
@@ -176,7 +205,9 @@ public class AuthService {
      * @return True if the code entered is correct.
      */
     public void verifyResetCode(String email, String code) {
-        Optional<User> userOpt = userRepository.findByEmail(email);
+        final String normalizedEmail = normalizeString(email);
+
+        Optional<User> userOpt = userRepository.findByEmail(normalizedEmail);
 
         User user = userOpt.orElseThrow(() -> new ResourceNotFoundException("User not found."));
 
@@ -184,10 +215,10 @@ public class AuthService {
                 || user.getResetCodeExpiry().isBefore(Instant.now()))
             throw new InvalidRequestException("Invalid or expired reset code.");
 
+        // Update user
         user.setResetCode(null);
         user.setResetCodeExpiry(null);
-
-        userRepository.save(user);
+        saveUpdatedUser(user);
     }
 
     /**
@@ -198,20 +229,22 @@ public class AuthService {
      * @param confirmPassword - Confirm password field entered by the user.
      */
     public void resetPassword(String email, String password, String confirmPassword) {
+        final String normalizedEmail = normalizeString(email);
+
         if (!password.equals(confirmPassword))
             throw new InvalidRequestException("Password and confirm password must be the same.");
 
-        Optional<User> userOpt = userRepository.findByEmail(email);
+        Optional<User> userOpt = userRepository.findByEmail(normalizedEmail);
 
         User user = userOpt.orElseThrow(() -> new ResourceNotFoundException("User not found."));
 
         if (passwordEncoder.matches(password, user.getPasswordHash()))
             throw new InvalidRequestException("New password can not be the same as the old password.");
 
+        // Update user
         String newEncodedPassword = passwordEncoder.encode(password);
         user.setPasswordHash(newEncodedPassword);
-
-        userRepository.save(user);
+        saveUpdatedUser(user);
     }
 
     /**
@@ -285,5 +318,25 @@ public class AuthService {
         if (userRepository.findByUsername(username).isPresent()) {
             throw new ResourceAlreadyExistsException("Username already exists.");
         }
+    }
+
+    /**
+     * Converts the original string into a trimmed and lowercase version.
+     * 
+     * @param s - Original string.
+     * @return Trimmed and lowercase original string.
+     */
+    private static String normalizeString(String s) {
+        return s.trim().toLowerCase();
+    }
+
+    /**
+     * Saves and updates user's updatedAt field.
+     * 
+     * @param user - User to be saved.
+     */
+    private void saveUpdatedUser(User user) {
+        user.setUpdatedAt(Instant.now());
+        userRepository.save(user);
     }
 }

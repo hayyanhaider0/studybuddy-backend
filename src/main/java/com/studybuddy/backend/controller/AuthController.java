@@ -34,7 +34,7 @@ public class AuthController {
     }
 
     @PostMapping("/verify-email")
-    @Operation(summary = "Verify user email", description = "Sends an email to the user's email to verify their account.")
+    @Operation(summary = "Verify user's email", description = "Sends an email to the user's email to verify their account.")
     public ResponseEntity<ApiResponse<Void>> verifyEmail(@RequestBody CodeRequest req) {
         authService.verifyEmail(req.getEmail(), req.getCode());
         ApiResponse<Void> res = new ApiResponse<>(true, "User verified successfully.", null);
@@ -58,7 +58,7 @@ public class AuthController {
     }
 
     @PostMapping("/verify-reset")
-    @Operation(summary = "Verified user's password reset code", description = "Compares the code entered with the reset code in the database, and checks its expiry time")
+    @Operation(summary = "Verify user's password reset code", description = "Compares the code entered with the reset code in the database, and checks its expiry time")
     public ResponseEntity<ApiResponse<?>> verifyReset(@RequestBody CodeRequest req) {
         authService.verifyResetCode(req.getEmail(), req.getCode());
         ApiResponse<Void> res = new ApiResponse<>(true, "Code verified successfully.", null);
@@ -92,7 +92,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    @Operation(summary = "Refresh access token", description = "Refreshes the user's access token to skip login.")
+    @Operation(summary = "Refresh user's access token", description = "Refreshes the user's access token to skip login.")
     public ResponseEntity<ApiResponse<?>> refresh(@RequestBody Map<String, String> req) {
         AuthResponse authResponse = authService.refreshToken(req.get("refreshToken"));
         ApiResponse<AuthResponse> res = new ApiResponse<>(true, "Token refreshed successfully.", authResponse);

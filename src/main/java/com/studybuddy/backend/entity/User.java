@@ -2,7 +2,6 @@ package com.studybuddy.backend.entity;
 
 import java.time.Instant;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.Map;
 
 import org.springframework.data.annotation.Id;
@@ -29,13 +28,14 @@ public class User {
     private Instant updatedAt;
 
     // Account settings
+    private String displayName;
     private Role role;
     private Map<String, Object> preferences;
     private boolean notificationsEnabled;
     private String timeZone;
 
     // Device/Security
-    private ZonedDateTime lastLoginAt;
+    private Instant lastLoginAt;
     private int loginCount;
     // private boolean twoFactorEnabled;
     // private String[] devices;
@@ -48,9 +48,10 @@ public class User {
     private String resetCode;
     private Instant resetCodeExpiry;
 
-    public User(String email, String username, String passwordHash) {
-        this.email = email;
-        this.username = username;
+    public User(String email, String username, String displayName, String passwordHash) {
+        this.email = email.trim().toLowerCase();
+        this.username = username.trim().toLowerCase();
+        this.displayName = displayName;
         this.passwordHash = passwordHash;
         this.role = Role.USER;
         this.verified = false;
