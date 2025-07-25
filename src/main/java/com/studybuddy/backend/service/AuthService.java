@@ -259,22 +259,23 @@ public class AuthService {
             throw new ResourceNotFoundException("Refresh token not found.");
 
         // Extract username from refresh token.
-        String username = jwtUtil.extractUsername(refreshToken);
+        String id = jwtUtil.extractId(refreshToken);
 
         // Check token validity.
-        if (!jwtUtil.validateToken(refreshToken, username))
+        if (!jwtUtil.validateToken(refreshToken, id))
             throw new InvalidTokenException("Invalid or expired refresh token");
 
         // Load user details.
-        Optional<User> userOpt = userRepository.findByUsername(username);
+        Optional<User> userOpt = userRepository.findByUsername(id);
         User user = userOpt.orElseThrow(() -> new ResourceNotFoundException("User not found."));
 
         // Generate new tokens.
-        String newAccessToken = jwtUtil.generateAccessToken(username);
-        String newRefreshToken = jwtUtil.generateRefreshToken(username);
+        String newAccessToken = jwtUtil.generateAccessToken(id);
+        String newRefreshToken = jwtUtil.generateRefreshToken(id);
 
         // Return tokens with user info.
-        return new AuthResponse(newAccessToken, newRefreshToken, user.getEmail(), username);
+        return new AuthResponse(newAccessToken, newRefreshToken, user.getEmail(), user.getUsername(),
+                user.getDisplayName());
     }
 
     /**
@@ -299,10 +300,10 @@ public class AuthService {
      * @return A response that contains the user's tokens, email, and username.
      */
     public AuthResponse generateTokensForUser(User user) {
-        String username = user.getUsername();
-        String accessToken = jwtUtil.generateAccessToken(username);
-        String refreshToken = jwtUtil.generateRefreshToken(username);
-        return new AuthResponse(accessToken, refreshToken, user.getEmail(), username);
+        String id = user.getId();
+        String accessToken = jwtUtil.generateAccessToken(id);
+        String refreshToken = jwtUtil.generateRefreshToken(id);
+        return new AuthResponse(accessToken, refreshToken, user.getEmail(), user.getUsername(), user.getDisplayName());
     }
 
     /**

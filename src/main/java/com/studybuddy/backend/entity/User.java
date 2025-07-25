@@ -5,8 +5,11 @@ import java.time.ZoneId;
 import java.util.Map;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.studybuddy.backend.enums.EducationLevel;
+import com.studybuddy.backend.enums.Occupation;
 import com.studybuddy.backend.enums.Role;
 
 import lombok.Data;
@@ -20,16 +23,22 @@ public class User {
     @Id
     private String id;
 
+    @Indexed(unique = true)
     private String email;
+    @Indexed(unique = true)
     private String username;
+
     private String passwordHash;
     private boolean verified;
+
     private Instant createdAt;
     private Instant updatedAt;
 
     // Account settings
     private String displayName;
     private Role role;
+    private Occupation occupation;
+    private EducationLevel educationLevel;
     private Map<String, Object> preferences;
     private boolean notificationsEnabled;
     private String timeZone;

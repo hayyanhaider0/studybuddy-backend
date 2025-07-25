@@ -24,24 +24,24 @@ public class JwtUtil {
         secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateAccessToken(String username) {
-        return createToken(username, ACCESS_TOKEN_EXPIRY);
+    public String generateAccessToken(String id) {
+        return createToken(id, ACCESS_TOKEN_EXPIRY);
     }
 
-    public String generateRefreshToken(String username) {
-        return createToken(username, REFRESH_TOKEN_EXPIRY);
+    public String generateRefreshToken(String id) {
+        return createToken(id, REFRESH_TOKEN_EXPIRY);
     }
 
     /**
      * Creates a new JWT token.
      * 
-     * @param username - Username of the user.
-     * @param expiry   - Time the token is valid for in ms.
+     * @param id     - ID of the user.
+     * @param expiry - Time the token is valid for in ms.
      * @return A new JWT token.
      */
-    private String createToken(String username, long expiry) {
+    private String createToken(String id, long expiry) {
         return Jwts.builder()
-                .setSubject(username)
+                .setSubject(id)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiry))
                 .signWith(secretKey, SignatureAlgorithm.HS256)
@@ -49,13 +49,13 @@ public class JwtUtil {
     }
 
     // Validate token.
-    public boolean validateToken(String token, String username) {
-        final String tokenUsername = extractUsername(token);
-        return (tokenUsername.equals(username) && !isTokenExpired(token));
+    public boolean validateToken(String token, String id) {
+        final String tokenUsername = extractId(token);
+        return (tokenUsername.equals(id) && !isTokenExpired(token));
     }
 
-    // Extract username from token.
-    public String extractUsername(String token) {
+    // Extract ID from token.
+    public String extractId(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
