@@ -14,6 +14,7 @@ import com.studybuddy.backend.dto.AuthResponse;
 import com.studybuddy.backend.dto.LoginRequest;
 import com.studybuddy.backend.dto.SignupRequest;
 import com.studybuddy.backend.entity.User;
+import com.studybuddy.backend.entity.embedded.UserSecurity;
 import com.studybuddy.backend.exception.InvalidRequestException;
 import com.studybuddy.backend.exception.InvalidTokenException;
 import com.studybuddy.backend.exception.ResourceAlreadyExistsException;
@@ -63,8 +64,10 @@ public class AuthService {
         Instant expiry = Instant.now().plusSeconds(SECONDS_TO_MINUTES * 5);
 
         User user = new User(normalizedEmail, normalizedUsername, req.getUsername(), encodedPassword);
-        user.setVerificationCode(code);
-        user.setVerificationCodeExpiry(expiry);
+
+        UserSecurity security = user.getSecurity();
+        security.setVerificationCode(code);
+        security.setVerificationCodeExpiry(expiry);
 
         // Check if the user already exists.
         try {
@@ -107,9 +110,10 @@ public class AuthService {
             return Collections.singletonMap("email", normalizeString(user.getEmail()));
         }
 
-        user.setLoginCount(user.getLoginCount() + 1);
-        user.setLastLoginAt(Instant.now());
-        saveUpdatedUser(user);
+        UserSecurity security = user.getSecurity();
+        security.setLoginCount(security.getLoginCount() + 1);
+        security.setLastLoginAt(Instant.now());
+        userRepository.save(user);
 
         return generateTokensForUser(user);
     }
@@ -133,15 +137,16 @@ public class AuthService {
             return;
 
         // Check if code matches verification code.
-        if (user.getVerificationCode() == null || !user.getVerificationCode().equals(code)
-                || user.getVerificationCodeExpiry().isBefore(Instant.now()))
+        UserSecurity security = user.getSecurity();
+        if (security.getVerificationCode() == null || !security.getVerificationCode().equals(code)
+                || security.getVerificationCodeExpiry().isBefore(Instant.now()))
             throw new InvalidRequestException("Invalid code or the code has expired.");
 
         // Update user
         user.setVerified(true);
-        user.setVerificationCode(null);
-        user.setVerificationCodeExpiry(null);
-        saveUpdatedUser(user);
+        security.setVerificationCode(null);
+        security.setVerificationCodeExpiry(null);
+        userRepository.save(user);
     }
 
     /**
@@ -162,9 +167,10 @@ public class AuthService {
         Instant newExpiry = Instant.now().plusSeconds(SECONDS_TO_MINUTES * 5);
 
         // Update user
-        user.setVerificationCode(newCode);
-        user.setVerificationCodeExpiry(newExpiry);
-        saveUpdatedUser(user);
+        UserSecurity security = user.getSecurity();
+        security.setVerificationCode(newCode);
+        security.setVerificationCodeExpiry(newExpiry);
+        userRepository.save(user);
 
         emailService.sendCodeEmail(normalizedEmail, newCode, "Verification");
     }
@@ -186,9 +192,10 @@ public class AuthService {
         Instant expiry = Instant.now().plusSeconds(SECONDS_TO_HOUR);
 
         // Update user
-        user.setResetCode(code);
-        user.setResetCodeExpiry(expiry);
-        saveUpdatedUser(user);
+        UserSecurity security = user.getSecurity();
+        security.setResetCode(code);
+        security.setResetCodeExpiry(expiry);
+        userRepository.save(user);
 
         String email = user.getEmail();
         emailService.sendCodeEmail(email, code, "Reset");
@@ -210,15 +217,16 @@ public class AuthService {
         Optional<User> userOpt = userRepository.findByEmail(normalizedEmail);
 
         User user = userOpt.orElseThrow(() -> new ResourceNotFoundException("User not found."));
+        UserSecurity security = user.getSecurity();
 
-        if (user.getResetCode() == null || !user.getResetCode().equals(code)
-                || user.getResetCodeExpiry().isBefore(Instant.now()))
+        if (security.getResetCode() == null || !security.getResetCode().equals(code)
+                || security.getResetCodeExpiry().isBefore(Instant.now()))
             throw new InvalidRequestException("Invalid or expired reset code.");
 
         // Update user
-        user.setResetCode(null);
-        user.setResetCodeExpiry(null);
-        saveUpdatedUser(user);
+        security.setResetCode(null);
+        security.setResetCodeExpiry(null);
+        userRepository.save(user);
     }
 
     /**
@@ -244,7 +252,7 @@ public class AuthService {
         // Update user
         String newEncodedPassword = passwordEncoder.encode(password);
         user.setPasswordHash(newEncodedPassword);
-        saveUpdatedUser(user);
+        userRepository.save(user);
     }
 
     /**
@@ -329,15 +337,5 @@ public class AuthService {
      */
     private static String normalizeString(String s) {
         return s.trim().toLowerCase();
-    }
-
-    /**
-     * Saves and updates user's updatedAt field.
-     * 
-     * @param user - User to be saved.
-     */
-    private void saveUpdatedUser(User user) {
-        user.setUpdatedAt(Instant.now());
-        userRepository.save(user);
     }
 }

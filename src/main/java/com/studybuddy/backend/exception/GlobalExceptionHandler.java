@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import com.mongodb.DuplicateKeyException;
 import com.studybuddy.backend.dto.ApiResponse;
 
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +25,17 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleUserAlreadyVerified(UserAlreadyVerifiedException e) {
         log.warn("User already verified: {}", e.getMessage());
         ApiResponse<Void> res = new ApiResponse<Void>(false, e.getMessage(), null);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(res);
+    }
+
+    @ExceptionHandler(DuplicateKeyException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDuplicateKey(DuplicateKeyException e) {
+        String msg = "User already exists";
+        String errMsg = e.getMessage().toLowerCase();
+
+        if (errMsg.contains("username")) msg = "Username already exists.";
+        if (errMsg.contains("email")) msg = "Email already exists.";
+        ApiResponse<Void> res = new ApiResponse<Void>(false, msg, null);
         return ResponseEntity.status(HttpStatus.CONFLICT).body(res);
     }
 

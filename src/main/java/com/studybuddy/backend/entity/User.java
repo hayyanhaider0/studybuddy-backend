@@ -1,13 +1,15 @@
 package com.studybuddy.backend.entity;
 
 import java.time.Instant;
-import java.time.ZoneId;
-import java.util.Map;
 
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.studybuddy.backend.entity.embedded.UserPreferences;
+import com.studybuddy.backend.entity.embedded.UserSecurity;
 import com.studybuddy.backend.enums.EducationLevel;
 import com.studybuddy.backend.enums.Occupation;
 import com.studybuddy.backend.enums.Role;
@@ -31,7 +33,9 @@ public class User {
     private String passwordHash;
     private boolean verified;
 
+    @CreatedDate
     private Instant createdAt;
+    @LastModifiedDate
     private Instant updatedAt;
 
     // Account settings
@@ -39,23 +43,10 @@ public class User {
     private Role role;
     private Occupation occupation;
     private EducationLevel educationLevel;
-    private Map<String, Object> preferences;
-    private boolean notificationsEnabled;
-    private String timeZone;
 
     // Device/Security
-    private Instant lastLoginAt;
-    private int loginCount;
-    // private boolean twoFactorEnabled;
-    // private String[] devices;
-
-    // User verification fields
-    private String verificationCode;
-    private Instant verificationCodeExpiry;
-
-    // Password reset fields
-    private String resetCode;
-    private Instant resetCodeExpiry;
+    private UserSecurity security;
+    private UserPreferences preferences;
 
     public User(String email, String username, String displayName, String passwordHash) {
         this.email = email.trim().toLowerCase();
@@ -64,9 +55,7 @@ public class User {
         this.passwordHash = passwordHash;
         this.role = Role.USER;
         this.verified = false;
-
-        this.createdAt = Instant.now();
-        this.updatedAt = Instant.now();
-        this.timeZone = ZoneId.systemDefault().getId();
+        this.security = new UserSecurity();
+        this.preferences = new UserPreferences();
     }
 }
