@@ -48,6 +48,9 @@ public class User {
     private UserSecurity security;
     private UserPreferences preferences;
 
+    private boolean isDeleted = false;
+    private Instant deletedAt;
+
     public User(String email, String username, String displayName, String passwordHash) {
         this.email = email.trim().toLowerCase();
         this.username = username.trim().toLowerCase();

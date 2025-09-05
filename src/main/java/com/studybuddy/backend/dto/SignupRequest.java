@@ -23,10 +23,7 @@ public class SignupRequest {
     private String username;
 
     @NotBlank(message = "Password is required.")
-    @Size.List({
-            @Size(min = 8, max = 64, message = "Password must be at least 8 characters long."),
-            @Size(max = 64, message = "Password can not be longer than 64 characters.")
-    })
+    @Size(min = 8, max = 64, message = "Password must be between 8 and 64 characters.")
     @Pattern.List({
             @Pattern(regexp = ".*[A-Z].*", message = "Password must contain at least one uppercase letter."),
             @Pattern(regexp = ".*[a-z].*", message = "Password must contain at least one lowercase letter."),

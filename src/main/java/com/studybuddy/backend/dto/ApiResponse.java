@@ -1,5 +1,7 @@
 package com.studybuddy.backend.dto;
 
+import com.studybuddy.backend.enums.ErrorCode;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -7,6 +9,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class ApiResponse<T> {
     private boolean success;
-    private String message;
     private T data;
+    private ErrorCode error;
+    private String message;
 }
