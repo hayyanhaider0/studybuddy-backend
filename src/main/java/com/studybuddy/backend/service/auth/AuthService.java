@@ -1,4 +1,4 @@
-package com.studybuddy.backend.service;
+package com.studybuddy.backend.service.auth;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -10,19 +10,20 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.mongodb.DuplicateKeyException;
-import com.studybuddy.backend.dto.AuthResponse;
-import com.studybuddy.backend.dto.LoginRequest;
-import com.studybuddy.backend.dto.SignupRequest;
-import com.studybuddy.backend.entity.User;
-import com.studybuddy.backend.entity.embedded.UserSecurity;
+import com.studybuddy.backend.dto.auth.AuthResponse;
+import com.studybuddy.backend.dto.auth.LoginRequest;
+import com.studybuddy.backend.dto.auth.SignupRequest;
+import com.studybuddy.backend.entity.auth.User;
+import com.studybuddy.backend.entity.auth.embedded.UserSecurity;
+import com.studybuddy.backend.exception.EmailNotVerifiedException;
 import com.studybuddy.backend.exception.InvalidRequestException;
 import com.studybuddy.backend.exception.InvalidTokenException;
 import com.studybuddy.backend.exception.ResourceAlreadyExistsException;
 import com.studybuddy.backend.exception.ResourceNotFoundException;
 import com.studybuddy.backend.exception.UserAlreadyVerifiedException;
 import com.studybuddy.backend.repository.UserRepository;
-import com.studybuddy.backend.utility.JwtUtil;
-import com.studybuddy.backend.utility.VerificationCodeGenerator;
+import com.studybuddy.backend.utility.auth.JwtUtil;
+import com.studybuddy.backend.utility.auth.VerificationCodeGenerator;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -94,8 +95,9 @@ public class AuthService {
      * 
      * @param req - The login request.
      * @return User Details if passwords match.
+     * @throws EmailNotVerifiedException if user exists but email not verified.
      */
-    public Object login(LoginRequest req) {
+    public AuthResponse login(LoginRequest req) {
         final String login = normalizeString(req.getLogin());
 
         Optional<User> userOpt = userRepository.findByUsername(login)
@@ -107,7 +109,7 @@ public class AuthService {
 
         if (!user.isVerified()) {
             handleUnverifiedUser(user);
-            return Collections.singletonMap("email", normalizeString(user.getEmail()));
+            throw new EmailNotVerifiedException(user.getEmail(), "Please verify your email before logging in.");
         }
 
         UserSecurity security = user.getSecurity();
@@ -292,7 +294,7 @@ public class AuthService {
      * 
      * @param user - The user to send the verificaition code to.
      */
-    public void handleUnverifiedUser(User user) {
+    private void handleUnverifiedUser(User user) {
         try {
             resendVerificationCode(user.getEmail());
         } catch (Exception e) {

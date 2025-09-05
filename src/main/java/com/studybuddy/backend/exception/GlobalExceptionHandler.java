@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import com.mongodb.DuplicateKeyException;
-import com.studybuddy.backend.dto.ApiResponse;
+import com.studybuddy.backend.dto.auth.ApiResponse;
 import com.studybuddy.backend.enums.ErrorCode;
 
 import lombok.extern.slf4j.Slf4j;
@@ -59,6 +59,13 @@ public class GlobalExceptionHandler {
     }
 
     // UNAUTHORIZED 401
+    @ExceptionHandler(EmailNotVerifiedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleEmailNotVerifiedException(EmailNotVerifiedException e) {
+        log.warn("Email not verified: {}", e.getMessage());
+        ApiResponse<Void> res = new ApiResponse<Void>(false, null, ErrorCode.EMAIL_NOT_VERIFIED, e.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(res);
+    }
+
     @ExceptionHandler(InvalidTokenException.class)
     public ResponseEntity<ApiResponse<Void>> handleInvalidToken(InvalidTokenException e) {
         log.warn("Invalid token: {}", e.getMessage());
