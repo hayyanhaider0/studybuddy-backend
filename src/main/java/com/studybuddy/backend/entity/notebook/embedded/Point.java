@@ -1,4 +1,4 @@
-package com.studybuddy.backend.entity.embedded;
+package com.studybuddy.backend.entity.notebook.embedded;
 
 import org.hibernate.validator.constraints.Range;
 

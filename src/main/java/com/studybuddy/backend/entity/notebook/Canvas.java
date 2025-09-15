@@ -1,4 +1,4 @@
-package com.studybuddy.backend.entity;
+package com.studybuddy.backend.entity.notebook;
 
 import java.time.Instant;
 

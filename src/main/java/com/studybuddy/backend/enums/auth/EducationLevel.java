@@ -1,4 +1,4 @@
-package com.studybuddy.backend.enums;
+package com.studybuddy.backend.enums.auth;
 
 public enum EducationLevel {
     HIGH_SCHOOL,

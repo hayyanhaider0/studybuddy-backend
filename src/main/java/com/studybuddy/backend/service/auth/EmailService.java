@@ -1,4 +1,4 @@
-package com.studybuddy.backend.service;
+package com.studybuddy.backend.service.auth;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

@@ -1,8 +1,8 @@
-package com.studybuddy.backend.entity.embedded;
+package com.studybuddy.backend.entity.auth.embedded;
 
 import java.time.ZoneId;
 
-import com.studybuddy.backend.enums.Theme;
+import com.studybuddy.backend.enums.auth.Theme;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

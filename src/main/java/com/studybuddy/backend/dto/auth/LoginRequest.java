@@ -1,4 +1,4 @@
-package com.studybuddy.backend.dto;
+package com.studybuddy.backend.dto.auth;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

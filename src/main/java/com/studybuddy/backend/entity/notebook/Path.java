@@ -1,4 +1,4 @@
-package com.studybuddy.backend.entity;
+package com.studybuddy.backend.entity.notebook;
 
 import java.util.List;
 
@@ -6,8 +6,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import com.studybuddy.backend.entity.embedded.Point;
-import com.studybuddy.backend.enums.BrushType;
+import com.studybuddy.backend.entity.notebook.embedded.Point;
+import com.studybuddy.backend.enums.notebook.BrushType;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;

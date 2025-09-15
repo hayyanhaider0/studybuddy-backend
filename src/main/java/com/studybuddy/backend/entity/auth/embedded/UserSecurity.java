@@ -1,4 +1,4 @@
-package com.studybuddy.backend.entity.embedded;
+package com.studybuddy.backend.entity.auth.embedded;
 
 import java.time.Instant;
 

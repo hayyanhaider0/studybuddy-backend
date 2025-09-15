@@ -1,4 +1,4 @@
-package com.studybuddy.backend.enums;
+package com.studybuddy.backend.enums.notebook;
 
 public enum BrushType {
     PEN,

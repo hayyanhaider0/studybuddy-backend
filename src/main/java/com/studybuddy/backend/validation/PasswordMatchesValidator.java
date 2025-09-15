@@ -1,6 +1,6 @@
 package com.studybuddy.backend.validation;
 
-import com.studybuddy.backend.dto.SignupRequest;
+import com.studybuddy.backend.dto.auth.SignupRequest;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;

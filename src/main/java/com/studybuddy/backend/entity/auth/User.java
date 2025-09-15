@@ -1,4 +1,4 @@
-package com.studybuddy.backend.entity;
+package com.studybuddy.backend.entity.auth;
 
 import java.time.Instant;
 
@@ -8,11 +8,11 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import com.studybuddy.backend.entity.embedded.UserPreferences;
-import com.studybuddy.backend.entity.embedded.UserSecurity;
-import com.studybuddy.backend.enums.EducationLevel;
-import com.studybuddy.backend.enums.Occupation;
-import com.studybuddy.backend.enums.Role;
+import com.studybuddy.backend.entity.auth.embedded.UserPreferences;
+import com.studybuddy.backend.entity.auth.embedded.UserSecurity;
+import com.studybuddy.backend.enums.auth.EducationLevel;
+import com.studybuddy.backend.enums.auth.Occupation;
+import com.studybuddy.backend.enums.auth.Role;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

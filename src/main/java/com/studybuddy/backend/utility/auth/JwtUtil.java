@@ -1,4 +1,4 @@
-package com.studybuddy.backend.utility;
+package com.studybuddy.backend.utility.auth;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
