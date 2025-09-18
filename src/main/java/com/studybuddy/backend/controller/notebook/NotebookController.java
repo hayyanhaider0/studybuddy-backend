@@ -1,7 +1,10 @@
 package com.studybuddy.backend.controller.notebook;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,5 +31,13 @@ public class NotebookController {
         NotebookResponse resData = notebookService.createNotebook(req);
         ApiResponse<NotebookResponse> res = new ApiResponse<>(true, resData, null, "Notebook created successfully.");
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<NotebookResponse>>> getNotebooks() {
+        var resData = notebookService.getNotebooks();
+        ApiResponse<List<NotebookResponse>> res = new ApiResponse<>(true, resData, null,
+                "Notebooks fetched successfully.");
+        return ResponseEntity.ok(res);
     }
 }

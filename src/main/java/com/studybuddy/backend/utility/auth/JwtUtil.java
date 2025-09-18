@@ -1,7 +1,7 @@
 package com.studybuddy.backend.utility.auth;
 
-import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.util.Base64;
 import java.util.Date;
 import java.util.function.Function;
 
@@ -21,7 +21,8 @@ public class JwtUtil {
     private final long REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7 days
 
     public JwtUtil(@Value("${JWT_SECRET}") String secret) {
-        secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        byte[] decodedKey = Base64.getDecoder().decode(secret);
+        secretKey = Keys.hmacShaKeyFor(decodedKey);
     }
 
     public String generateAccessToken(String id) {
@@ -60,7 +61,7 @@ public class JwtUtil {
     }
 
     // Check if token is expired.
-    private boolean isTokenExpired(String token) {
+    protected boolean isTokenExpired(String token) {
         final Date expiration = extractClaim(token, Claims::getExpiration);
         return expiration.before(new Date());
     }
@@ -78,5 +79,4 @@ public class JwtUtil {
                 .parseClaimsJws(token)
                 .getBody();
     }
-
 }

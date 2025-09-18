@@ -12,5 +12,6 @@ public class NotebookResponse {
     private String title;
     private String color;
     private Instant createdAt;
+    private Instant updatedAt;
     private boolean isDeleted;
 }

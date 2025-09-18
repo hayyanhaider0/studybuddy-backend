@@ -1,5 +1,7 @@
 package com.studybuddy.backend.exception;
 
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -60,9 +62,12 @@ public class GlobalExceptionHandler {
 
     // UNAUTHORIZED 401
     @ExceptionHandler(EmailNotVerifiedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleEmailNotVerifiedException(EmailNotVerifiedException e) {
+    public ResponseEntity<ApiResponse<Map<String, String>>> handleEmailNotVerifiedException(
+            EmailNotVerifiedException e) {
         log.warn("Email not verified: {}", e.getMessage());
-        ApiResponse<Void> res = new ApiResponse<Void>(false, null, ErrorCode.EMAIL_NOT_VERIFIED, e.getMessage());
+        Map<String, String> resData = Map.of("email", e.getEmail());
+        ApiResponse<Map<String, String>> res = new ApiResponse<Map<String, String>>(false, resData,
+                ErrorCode.EMAIL_NOT_VERIFIED, e.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(res);
     }
 
