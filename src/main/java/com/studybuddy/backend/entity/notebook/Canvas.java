@@ -23,6 +23,7 @@ public class Canvas {
     private Instant createdAt;
     @LastModifiedDate
     private Instant updatedAt;
+    private Instant lastAccessedAt;
     private int order;
     private boolean isDeleted = false;
     private Instant deletedAt;

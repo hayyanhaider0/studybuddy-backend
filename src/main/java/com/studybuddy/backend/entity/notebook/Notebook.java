@@ -26,6 +26,7 @@ public class Notebook {
     private Instant createdAt;
     @LastModifiedDate
     private Instant updatedAt;
+    private Instant lastAccessedAt;
     private String color;
     private boolean isDeleted = false;
     private Instant deletedAt;

@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import com.studybuddy.backend.dto.notebook.ChapterRequest;
+import com.studybuddy.backend.dto.notebook.ChapterResponse;
 import com.studybuddy.backend.dto.notebook.NotebookRequest;
 import com.studybuddy.backend.dto.notebook.NotebookResponse;
 import com.studybuddy.backend.entity.notebook.Notebook;
@@ -16,10 +18,13 @@ import com.studybuddy.backend.repository.UserRepository;
 public class NotebookService {
     private final NotebookRepository notebookRepository;
     private final UserRepository userRepository;
+    private final ChapterService chapterService;
 
-    public NotebookService(NotebookRepository notebookRepository, UserRepository userRepository) {
+    public NotebookService(NotebookRepository notebookRepository, UserRepository userRepository,
+            ChapterService chapterService) {
         this.notebookRepository = notebookRepository;
         this.userRepository = userRepository;
+        this.chapterService = chapterService;
     }
 
     public NotebookResponse createNotebook(NotebookRequest req) {
@@ -34,6 +39,10 @@ public class NotebookService {
         }
 
         notebook = notebookRepository.save(notebook);
+
+        // Create the first chapter
+        ChapterRequest chapterRequest = new ChapterRequest(notebook.getId(), "Chapter 1", 0);
+        chapterService.createChapter(chapterRequest);
 
         return mapToResponse(notebook);
     }

@@ -7,12 +7,11 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class NotebookResponse {
+public class ChapterResponse {
     private String id;
+    private String notebookId;
     private String title;
-    private String color;
+    private int order;
     private Instant createdAt;
     private Instant updatedAt;
-    private Instant lastAccessedAt;
-    private boolean isDeleted;
 }
