@@ -1,8 +1,6 @@
 package com.studybuddy.backend.service.notebook;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -28,9 +26,13 @@ public class ChapterService {
     }
 
     // Fetch chapters for multiple notebooks
-    public Map<String, List<ChapterResponse>> getChaptersForRecentNotebooks(List<String> notebookIds) {
+    public List<ChapterResponse> getChaptersForRecentNotebooks(List<String> notebookIds) {
         return notebookIds.stream()
-                .collect(Collectors.toMap(id -> id, this::getChaptersByNotebookId));
+                .flatMap(id -> chapterRepository
+                        .findAllByNotebookIdAndIsDeletedFalse(id)
+                        .stream()
+                        .map(this::mapToResponse))
+                .toList();
     }
 
     // Fetch chapters by notebook

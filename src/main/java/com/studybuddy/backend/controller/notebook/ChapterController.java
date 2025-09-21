@@ -1,7 +1,6 @@
 package com.studybuddy.backend.controller.notebook;
 
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,10 +34,10 @@ public class ChapterController {
     }
 
     @PostMapping("/by-notebooks")
-    public ResponseEntity<ApiResponse<Map<String, List<ChapterResponse>>>> getChaptersByNotebookIds(
+    public ResponseEntity<ApiResponse<List<ChapterResponse>>> getChaptersByNotebookIds(
             @Valid @RequestBody ChapterFetchRequest req) {
 
-        Map<String, List<ChapterResponse>> data = chapterService.getChaptersForRecentNotebooks(req.getNotebookIds());
+        List<ChapterResponse> data = chapterService.getChaptersForRecentNotebooks(req.getNotebookIds());
         return ResponseEntity.ok(new ApiResponse<>(true, data, null, "Chapters fetched successfully."));
     }
 }

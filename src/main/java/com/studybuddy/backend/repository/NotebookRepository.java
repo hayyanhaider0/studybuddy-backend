@@ -10,5 +10,5 @@ import com.studybuddy.backend.entity.notebook.Notebook;
 public interface NotebookRepository extends MongoRepository<Notebook, String> {
     List<Notebook> findByUserIdAndIsDeletedFalse(String id);
 
-    List<Notebook> findByUserIdAndIsDeletedFalseOrderByLastAccessedDesc(String id, Pageable pageable);
+    List<Notebook> findByUserIdAndIsDeletedFalseOrderByLastAccessedAtDesc(String id, Pageable pageable);
 }

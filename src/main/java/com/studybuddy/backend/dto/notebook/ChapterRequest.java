@@ -1,7 +1,9 @@
 package com.studybuddy.backend.dto.notebook;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -12,7 +14,8 @@ public class ChapterRequest {
     String notebookId;
     @NotBlank(message = "Title cannot be blank.")
     String title;
-    @NotBlank
-    @Size(min = 0, message = "Order must be non-negative.")
+    @NotNull
+    @Min(0)
+    @Max(100)
     int order;
 }

@@ -66,7 +66,7 @@ public class NotebookService {
         limit = Math.min(limit, 30); // Max limit
 
         List<Notebook> notebooks = notebookRepository
-                .findByUserIdAndIsDeletedFalseOrderByLastAccessedDesc(userId, PageRequest.of(0, limit));
+                .findByUserIdAndIsDeletedFalseOrderByLastAccessedAtDesc(userId, PageRequest.of(0, limit));
 
         return notebooks.stream().map(Notebook::getId).toList();
     }
