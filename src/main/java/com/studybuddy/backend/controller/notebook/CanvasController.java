@@ -1,7 +1,6 @@
 package com.studybuddy.backend.controller.notebook;
 
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,7 +35,7 @@ public class CanvasController {
     }
 
     @PostMapping("/by-chapters")
-    public ResponseEntity<ApiResponse<Map<String, List<CanvasResponse>>>> getCanvasesByChapterIds(
+    public ResponseEntity<ApiResponse<List<CanvasResponse>>> getCanvasesByChapterIds(
             @Valid @RequestBody CanvasFetchRequest req) {
 
         if (req.getChapterIds() == null || req.getChapterIds().isEmpty()) {
@@ -44,7 +43,7 @@ public class CanvasController {
                     .body(new ApiResponse<>(false, null, null, "chapterIds cannot be empty"));
         }
 
-        Map<String, List<CanvasResponse>> data = canvasService.getCanvasesByChapterId(req.getChapterIds());
+        List<CanvasResponse> data = canvasService.getCanvasesByChapterId(req.getChapterIds());
         return ResponseEntity.ok(new ApiResponse<>(true, data, null, "Canvases fetched successfully."));
     }
 }
