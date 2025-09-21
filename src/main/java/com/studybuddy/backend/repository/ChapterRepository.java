@@ -10,5 +10,5 @@ import com.studybuddy.backend.entity.notebook.Chapter;
 public interface ChapterRepository extends MongoRepository<Chapter, String> {
     Optional<Chapter> findByIdAndIsDeletedFalse(String id);
 
-    Optional<List<Chapter>> findAllByNotebookIdAndIsDeletedFalse(String notebookId);
+    List<Chapter> findAllByNotebookIdAndIsDeletedFalse(String notebookId);
 }

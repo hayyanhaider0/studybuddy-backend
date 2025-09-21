@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import com.studybuddy.backend.dto.notebook.ChapterRequest;
 import com.studybuddy.backend.dto.notebook.ChapterResponse;
 import com.studybuddy.backend.entity.notebook.Chapter;
-import com.studybuddy.backend.exception.ResourceNotFoundException;
 import com.studybuddy.backend.repository.ChapterRepository;
 
 @Service
@@ -36,9 +35,7 @@ public class ChapterService {
     }
 
     public List<ChapterResponse> getChaptersByNotebookId(String notebookId) {
-        List<Chapter> chapters = chapterRepository.findAllByNotebookIdAndIsDeletedFalse(notebookId).orElseThrow(
-                () -> new ResourceNotFoundException("No chapters found for notebook with id: " + notebookId));
-
+        List<Chapter> chapters = chapterRepository.findAllByNotebookIdAndIsDeletedFalse(notebookId);
         return chapters.stream().map(this::mapToResponse).toList();
     }
 
