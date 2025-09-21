@@ -5,8 +5,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class CanvasResponse {
-    private String id;
+public class CanvasCreateRequest {
     private String chapterId;
     private int order;
 }

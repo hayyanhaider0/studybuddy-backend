@@ -2,9 +2,7 @@ package com.studybuddy.backend.service.notebook;
 
 import java.util.List;
 
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.studybuddy.backend.dto.notebook.ChapterRequest;
@@ -18,6 +16,7 @@ import com.studybuddy.backend.utility.auth.AuthUtil;
 
 @Service
 public class NotebookService {
+
     private final NotebookRepository notebookRepository;
     private final UserRepository userRepository;
     private final ChapterService chapterService;
@@ -31,44 +30,44 @@ public class NotebookService {
         this.authUtil = authUtil;
     }
 
+    // Create notebook
     public NotebookResponse createNotebook(NotebookRequest req) {
-        String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String userId = authUtil.getCurrentUserId();
 
-        userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found."));
+        userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found."));
 
         Notebook notebook = new Notebook(userId, req.getTitle());
-
         if (req.getColor() != null && !req.getColor().trim().isEmpty()) {
             notebook.setColor(req.getColor());
         }
-
         notebook = notebookRepository.save(notebook);
 
-        // Create the first chapter
-        String notebookId = notebook.getId();
-        ChapterRequest chapterRequest = new ChapterRequest(notebookId, "Chapter 1", 0);
-        chapterService.createChapter(notebookId, chapterRequest);
+        // Create first chapter automatically
+        ChapterRequest chapterReq = new ChapterRequest(notebook.getId(), "Chapter 1", 0);
+        chapterService.createChapter(notebook.getId(), chapterReq);
 
         return mapToResponse(notebook);
     }
 
+    // Fetch all notebooks for user
     public List<NotebookResponse> getNotebooks() {
-        String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found."));
+        String userId = authUtil.getCurrentUserId();
+        userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found."));
+
         List<Notebook> notebooks = notebookRepository.findByUserIdAndIsDeletedFalse(userId);
         return notebooks.stream().map(this::mapToResponse).toList();
     }
 
+    // Fetch recent notebook IDs
     public List<String> getRecentNotebookIds(int limit) {
         String userId = authUtil.getCurrentUserId();
+        limit = Math.min(limit, 30); // Max limit
 
-        // Enforce max limit
-        final int MAX_LIMIT = 30;
-        limit = Math.min(limit, MAX_LIMIT);
+        List<Notebook> notebooks = notebookRepository
+                .findByUserIdAndIsDeletedFalseOrderByLastAccessedDesc(userId, PageRequest.of(0, limit));
 
-        Pageable pageable = PageRequest.of(0, limit);
-        List<Notebook> notebooks = notebookRepository.findByUserIdAndIsDeletedFalseOrderByLastAccessedDesc(userId,
-                pageable);
         return notebooks.stream().map(Notebook::getId).toList();
     }
 

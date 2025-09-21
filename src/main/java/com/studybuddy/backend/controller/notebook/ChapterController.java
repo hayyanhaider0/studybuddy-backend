@@ -3,52 +3,42 @@ package com.studybuddy.backend.controller.notebook;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.studybuddy.backend.dto.auth.ApiResponse;
+import com.studybuddy.backend.dto.notebook.ChapterFetchRequest;
+import com.studybuddy.backend.dto.notebook.ChapterRequest;
 import com.studybuddy.backend.dto.notebook.ChapterResponse;
 import com.studybuddy.backend.service.notebook.ChapterService;
-import com.studybuddy.backend.service.notebook.NotebookService;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/chapters")
 public class ChapterController {
-    private final NotebookService notebookService;
+
     private final ChapterService chapterService;
 
-    public ChapterController(NotebookService notebookService, ChapterService chapterService) {
-        this.notebookService = notebookService;
+    public ChapterController(ChapterService chapterService) {
         this.chapterService = chapterService;
     }
 
-    @GetMapping
-    public ResponseEntity<ApiResponse<Map<String, List<ChapterResponse>>>> getChapters(
-            @RequestParam(required = false) String notebookId,
-            @RequestParam(required = false, defaultValue = "false") boolean recent,
-            @RequestParam(required = false, defaultValue = "10") int limit) {
+    @PostMapping
+    public ResponseEntity<ApiResponse<ChapterResponse>> createChapter(@Valid @RequestBody ChapterRequest req) {
+        ChapterResponse data = chapterService.createChapter(req.getNotebookId(), req);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(true, data, null, "Chapter created successfully."));
+    }
 
-        // Maximum limit for number of notebooks
-        final int MAX_LIMIT = 30;
-        limit = Math.min(limit, MAX_LIMIT);
+    @PostMapping("/by-notebooks")
+    public ResponseEntity<ApiResponse<Map<String, List<ChapterResponse>>>> getChaptersByNotebookIds(
+            @Valid @RequestBody ChapterFetchRequest req) {
 
-        Map<String, List<ChapterResponse>> resData;
-
-        if (recent) {
-            List<String> recentIds = notebookService.getRecentNotebookIds(limit);
-            resData = chapterService.getChaptersForRecentNotebooks(recentIds);
-        } else if (notebookId != null) {
-            resData = Map.of(notebookId, chapterService.getChaptersByNotebookId(notebookId));
-        } else {
-            throw new IllegalArgumentException("Either notebookId or recent=true must be specified.");
-        }
-
-        ApiResponse<Map<String, List<ChapterResponse>>> res = new ApiResponse<Map<String, List<ChapterResponse>>>(true,
-                resData, null,
-                "Chapters for the user's recent notebooks sent successfully.");
-        return ResponseEntity.ok(res);
+        Map<String, List<ChapterResponse>> data = chapterService.getChaptersForRecentNotebooks(req.getNotebookIds());
+        return ResponseEntity.ok(new ApiResponse<>(true, data, null, "Chapters fetched successfully."));
     }
 }
