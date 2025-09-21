@@ -1,6 +1,8 @@
 package com.studybuddy.backend.service.notebook;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -18,9 +20,9 @@ public class ChapterService {
         this.chapterRepository = chapterRepository;
     }
 
-    public ChapterResponse createChapter(ChapterRequest req) {
+    public ChapterResponse createChapter(String notebookId, ChapterRequest req) {
         Chapter chapter = new Chapter(
-                req.getNotebookId(),
+                notebookId,
                 req.getTitle(),
                 req.getOrder());
 
@@ -29,11 +31,15 @@ public class ChapterService {
         return mapToResponse(chapter);
     }
 
-    public List<Chapter> getChaptersByNotebookId(String notebookId) {
+    public Map<String, List<ChapterResponse>> getChaptersForRecentNotebooks(List<String> recentNotebookIds) {
+        return recentNotebookIds.stream().collect(Collectors.toMap(id -> id, this::getChaptersByNotebookId));
+    }
+
+    public List<ChapterResponse> getChaptersByNotebookId(String notebookId) {
         List<Chapter> chapters = chapterRepository.findAllByNotebookIdAndIsDeletedFalse(notebookId).orElseThrow(
                 () -> new ResourceNotFoundException("No chapters found for notebook with id: " + notebookId));
 
-        return chapters;
+        return chapters.stream().map(this::mapToResponse).toList();
     }
 
     private ChapterResponse mapToResponse(Chapter chapter) {
