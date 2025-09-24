@@ -2,6 +2,7 @@ package com.studybuddy.backend.entity.notebook;
 
 import java.util.List;
 
+import org.hibernate.validator.constraints.Range;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -9,7 +10,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import com.studybuddy.backend.entity.notebook.embedded.Point;
 import com.studybuddy.backend.enums.notebook.BrushType;
 
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,16 +25,25 @@ public class Path {
     private String id;
     @Indexed
     private String canvasId;
+    private String chapterId;
     @NotEmpty(message = "A path must have at least 1 point.")
     private List<Point> points;
-    private BrushType brush;
+    private BrushType brushType;
+    @NotBlank
+    @Min(value = 7,message="Path color must be a hex code.")
+    @Max(value = 7, message="Path color must be a hex code.")
+    private String color;
+    @Min(value = 0, message = "Base width must be a positive integer..")
+    private int baseWidth;
+    @Range(min = 0, max = 1, message = "Opacity must be between 0 and 1.")
+    private double opacity;
     @Min(value = 1, message = "A path must have at least 1 point.")
     private int pointCount;
 
-    public Path(String canvasId, List<Point> points, BrushType brush) {
+    public Path(String canvasId, List<Point> points, BrushType brushType) {
         this.canvasId = canvasId;
         this.points = points;
-        this.brush = brush;
+        this.brushType = brushType;
         this.pointCount = points.size();
     }
 }
