@@ -13,10 +13,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PathResponse {
+    private String id;
     private String canvasId;
     private List<Point> points;
     private BrushType brushType;
-    private int baseWidth;
+    private double baseWidth;
     private double opacity;
     private String color;
 }

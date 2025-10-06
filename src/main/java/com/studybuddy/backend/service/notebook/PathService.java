@@ -13,24 +13,27 @@ import com.studybuddy.backend.repository.PathRepository;
 public class PathService {
     private final PathRepository pathRepository;
 
-    public PathService(PathRepository pathRepository)
-    {
+    public PathService(PathRepository pathRepository) {
         this.pathRepository = pathRepository;
     }
 
-    public void createPath(PathRequest req)
-    {
-        Path path = new Path(req.getCanvasId(),req.getPoints(),req.getBrushType());
+    public void createPath(PathRequest req) {
+        Path path = new Path(req.getCanvasId(), req.getPoints(), req.getBrushType(), req.getColor(),
+                req.getBaseWidth(), req.getOpacity());
         pathRepository.save(path);
     }
 
-    public List<PathResponse> getPathsByChapterId(String chapterId)
-    {
+    public List<PathResponse> getPathsByCanvasIds(List<String> canvasIds) {
+        return pathRepository.findAllByCanvasIdIn(canvasIds).stream().map(this::mapToResponse).toList();
+    }
+
+    public List<PathResponse> getPathsByChapterId(String chapterId) {
         return pathRepository.findAllByChapterId(chapterId).stream().map(this::mapToResponse).toList();
     }
 
-    private PathResponse mapToResponse(Path path)
-    {
-        return new PathResponse(path.getCanvasId(), path.getPoints(), path.getBrushType(), path.getBaseWidth(),path.getOpacity(), path.getColor());
+    private PathResponse mapToResponse(Path path) {
+        return new PathResponse(path.getId(), path.getCanvasId(), path.getPoints(), path.getBrushType(),
+                path.getBaseWidth(),
+                path.getOpacity(), path.getColor());
     }
 }

@@ -13,11 +13,11 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PathRequest {
-    
+
     private String canvasId;
     private List<Point> points;
     private BrushType brushType;
-    private int baseWidth;
+    private double baseWidth;
     private double opacity;
     private String color;
 }

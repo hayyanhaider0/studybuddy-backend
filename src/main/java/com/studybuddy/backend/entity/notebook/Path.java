@@ -30,20 +30,24 @@ public class Path {
     private List<Point> points;
     private BrushType brushType;
     @NotBlank
-    @Min(value = 7,message="Path color must be a hex code.")
-    @Max(value = 7, message="Path color must be a hex code.")
+    @Min(value = 7, message = "Path color must be a hex code.")
+    @Max(value = 7, message = "Path color must be a hex code.")
     private String color;
-    @Min(value = 0, message = "Base width must be a positive integer..")
-    private int baseWidth;
+    @Min(value = 0, message = "Base width must be a positive integer.")
+    private double baseWidth;
     @Range(min = 0, max = 1, message = "Opacity must be between 0 and 1.")
     private double opacity;
     @Min(value = 1, message = "A path must have at least 1 point.")
     private int pointCount;
 
-    public Path(String canvasId, List<Point> points, BrushType brushType) {
+    public Path(String canvasId, List<Point> points, BrushType brushType, String color, double baseWidth,
+            double opacity) {
         this.canvasId = canvasId;
         this.points = points;
         this.brushType = brushType;
+        this.color = color;
+        this.baseWidth = baseWidth;
+        this.opacity = opacity;
         this.pointCount = points.size();
     }
 }
