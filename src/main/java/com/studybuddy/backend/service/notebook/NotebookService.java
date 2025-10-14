@@ -39,9 +39,12 @@ public class NotebookService {
 
         // Create first chapter automatically
         ChapterRequest chapterReq = new ChapterRequest(notebook.getId(), "Chapter 1", 0);
-        chapterService.createChapter(notebook.getId(), chapterReq);
+        var firstChapter = chapterService.createChapter(notebook.getId(), chapterReq);
 
-        return mapToResponse(notebook);
+        NotebookResponse res = mapToResponse(notebook);
+        res.setChapters(List.of(firstChapter));
+
+        return res;
     }
 
     // Fetch all notebooks for user

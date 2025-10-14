@@ -32,9 +32,12 @@ public class ChapterService {
         chapter = chapterRepository.save(chapter);
 
         CanvasCreateRequest canvasCreateRequest = new CanvasCreateRequest(chapter.getId(), 0);
-        canvasService.createCanvas(canvasCreateRequest);
+        var firstCanvas = canvasService.createCanvas(canvasCreateRequest);
 
-        return mapToResponse(chapter);
+        ChapterResponse res = mapToResponse(chapter);
+        res.setCanvases(List.of(firstCanvas));
+
+        return res;
     }
 
     // Fetch chapters for multiple notebooks

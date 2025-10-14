@@ -1,6 +1,7 @@
 package com.studybuddy.backend.dto.notebook;
 
 import java.time.Instant;
+import java.util.List;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,4 +15,6 @@ public class ChapterResponse {
     private int order;
     private Instant createdAt;
     private Instant updatedAt;
+
+    private List<CanvasResponse> canvases;
 }
