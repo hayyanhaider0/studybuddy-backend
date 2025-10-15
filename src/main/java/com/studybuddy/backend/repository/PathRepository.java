@@ -11,4 +11,6 @@ public interface PathRepository extends MongoRepository<Path, String> {
     List<Path> findAllByCanvasIdIn(List<String> canvasIds);
 
     List<Path> findAllByChapterId(String chapterId);
+
+    void deleteByIdIn(List<String> ids);
 }

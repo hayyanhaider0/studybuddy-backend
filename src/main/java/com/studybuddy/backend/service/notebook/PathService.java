@@ -1,9 +1,11 @@
 package com.studybuddy.backend.service.notebook;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.studybuddy.backend.dto.notebook.PathCreateResponse;
 import com.studybuddy.backend.dto.notebook.PathRequest;
 import com.studybuddy.backend.dto.notebook.PathResponse;
 import com.studybuddy.backend.entity.notebook.Path;
@@ -17,10 +19,17 @@ public class PathService {
         this.pathRepository = pathRepository;
     }
 
-    public void createPath(PathRequest req) {
-        Path path = new Path(req.getCanvasId(), req.getPoints(), req.getBrushType(), req.getColor(),
-                req.getBaseWidth(), req.getOpacity());
-        pathRepository.save(path);
+    public List<PathCreateResponse> createPaths(List<PathRequest> req) {
+        List<PathCreateResponse> resData = new ArrayList<>();
+
+        for (PathRequest r : req) {
+            Path path = new Path(r.getCanvasId(), r.getPoints(), r.getBrushType(), r.getColor(),
+                    r.getBaseWidth(), r.getOpacity());
+            Path pathWithId = pathRepository.save(path);
+            resData.add(new PathCreateResponse(pathWithId.getId(), r.getTempId()));
+        }
+
+        return resData;
     }
 
     public List<PathResponse> getPathsByCanvasIds(List<String> canvasIds) {
@@ -29,6 +38,10 @@ public class PathService {
 
     public List<PathResponse> getPathsByChapterId(String chapterId) {
         return pathRepository.findAllByChapterId(chapterId).stream().map(this::mapToResponse).toList();
+    }
+
+    public void deletePathsById(List<String> ids) {
+        pathRepository.deleteAllById(ids);
     }
 
     private PathResponse mapToResponse(Path path) {

@@ -1,6 +1,8 @@
 package com.studybuddy.backend.service.notebook;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -8,21 +10,30 @@ import org.springframework.stereotype.Service;
 import com.studybuddy.backend.dto.notebook.ChapterRequest;
 import com.studybuddy.backend.dto.notebook.NotebookRequest;
 import com.studybuddy.backend.dto.notebook.NotebookResponse;
+import com.studybuddy.backend.entity.notebook.Canvas;
+import com.studybuddy.backend.entity.notebook.Chapter;
 import com.studybuddy.backend.entity.notebook.Notebook;
+import com.studybuddy.backend.exception.ResourceNotFoundException;
+import com.studybuddy.backend.repository.CanvasRepository;
+import com.studybuddy.backend.repository.ChapterRepository;
 import com.studybuddy.backend.repository.NotebookRepository;
-import com.studybuddy.backend.repository.UserRepository;
 import com.studybuddy.backend.utility.auth.AuthUtil;
 
 @Service
 public class NotebookService {
 
     private final NotebookRepository notebookRepository;
+    private final ChapterRepository chapterRepository;
+    private final CanvasRepository canvasRepository;
     private final ChapterService chapterService;
     private final AuthUtil authUtil;
 
-    public NotebookService(NotebookRepository notebookRepository, UserRepository userRepository,
-            ChapterService chapterService, AuthUtil authUtil) {
+    public NotebookService(NotebookRepository notebookRepository, ChapterRepository chapterRepository,
+            CanvasRepository canvasRepository, ChapterService chapterService,
+            AuthUtil authUtil) {
         this.notebookRepository = notebookRepository;
+        this.chapterRepository = chapterRepository;
+        this.canvasRepository = canvasRepository;
         this.chapterService = chapterService;
         this.authUtil = authUtil;
     }
@@ -64,6 +75,40 @@ public class NotebookService {
                 .findByUserIdAndIsDeletedFalseOrderByLastAccessedAtDesc(userId, PageRequest.of(0, limit));
 
         return notebooks.stream().map(Notebook::getId).toList();
+    }
+
+    public void deleteNotebook(String id) {
+        String userId = authUtil.getCurrentUserId();
+        Notebook notebook = notebookRepository.findByIdAndUserIdAndIsDeletedFalse(id, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notebook  with id " + id + " not found."));
+
+        notebook.setDeleted(true);
+        notebook.setDeletedAt(Instant.now());
+
+        notebookRepository.save(notebook);
+
+        cascaseSoftDelete(notebook);
+    }
+
+    private void cascaseSoftDelete(Notebook notebook) {
+        Instant now = Instant.now();
+
+        List<Chapter> chapters = chapterRepository.findAllByNotebookIdAndIsDeletedFalse(notebook.getId());
+        for (Chapter chapter : chapters) {
+            chapter.setDeleted(true);
+            chapter.setDeletedAt(now);
+        }
+
+        chapterRepository.saveAll(chapters);
+        List<String> chapterIds = chapters.stream().map(Chapter::getId).collect(Collectors.toList());
+
+        List<Canvas> canvases = canvasRepository.findAllByChapterIdInAndIsDeletedFalse(chapterIds);
+        for (Canvas canvas : canvases) {
+            canvas.setDeleted(true);
+            canvas.setDeletedAt(now);
+        }
+
+        canvasRepository.saveAll(canvases);
     }
 
     private NotebookResponse mapToResponse(Notebook notebook) {

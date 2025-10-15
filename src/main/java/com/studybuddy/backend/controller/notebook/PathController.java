@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.studybuddy.backend.dto.auth.ApiResponse;
+import com.studybuddy.backend.dto.notebook.PathCreateResponse;
 import com.studybuddy.backend.dto.notebook.PathRequest;
 import com.studybuddy.backend.dto.notebook.PathResponse;
 import com.studybuddy.backend.service.notebook.PathService;
@@ -15,6 +16,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,10 +32,11 @@ public class PathController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> createPath(@Valid @RequestBody PathRequest req) {
-        pathService.createPath(req);
+    public ResponseEntity<ApiResponse<List<PathCreateResponse>>> createPaths(
+            @Valid @RequestBody List<PathRequest> req) {
+        List<PathCreateResponse> resData = pathService.createPaths(req);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new ApiResponse<Void>(true, null, null, "Path created successfully."));
+                .body(new ApiResponse<List<PathCreateResponse>>(true, resData, null, "Paths created successfully."));
     }
 
     @PostMapping("/by-canvases")
@@ -48,6 +51,12 @@ public class PathController {
         List<PathResponse> resData = pathService.getPathsByChapterId(chapterId);
         return ResponseEntity
                 .ok(new ApiResponse<List<PathResponse>>(true, resData, null, "Paths fetched successfully."));
+    }
+
+    @DeleteMapping
+    public ResponseEntity<ApiResponse<Void>> deletePathsById(@RequestBody List<String> ids) {
+        pathService.deletePathsById(ids);
+        return ResponseEntity.ok(new ApiResponse<Void>(true, null, null, "Paths deleted successfully."));
     }
 
 }
