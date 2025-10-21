@@ -77,6 +77,24 @@ public class NotebookService {
         return notebooks.stream().map(Notebook::getId).toList();
     }
 
+    // Edit notebook
+    public void editNotebook(String id, NotebookRequest req) {
+        String userId = authUtil.getCurrentUserId();
+
+        Notebook notebook = notebookRepository.findByIdAndUserIdAndIsDeletedFalse(id, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notebook with id " + id + " not found."));
+
+        if (req.getTitle() != null) {
+            notebook.setTitle(req.getTitle());
+        }
+
+        if (req.getColor() != null) {
+            notebook.setColor(req.getColor());
+        }
+
+        notebookRepository.save(notebook);
+    }
+
     public void deleteNotebook(String id) {
         String userId = authUtil.getCurrentUserId();
         Notebook notebook = notebookRepository.findByIdAndUserIdAndIsDeletedFalse(id, userId)
