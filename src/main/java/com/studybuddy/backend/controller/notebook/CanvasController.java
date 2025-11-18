@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,5 +47,11 @@ public class CanvasController {
 
         List<CanvasResponse> data = canvasService.getCanvasesByChapterId(req.getChapterIds());
         return ResponseEntity.ok(new ApiResponse<>(true, data, null, "Canvases fetched successfully."));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteCanvas(@PathVariable String id) {
+        canvasService.deleteCanvas(id);
+        return ResponseEntity.ok(new ApiResponse<Void>(true, null, null, "Canvas " + id + " deleted successfully."));
     }
 }

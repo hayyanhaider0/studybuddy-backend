@@ -1,5 +1,7 @@
 package com.studybuddy.backend.service.notebook;
 
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -7,7 +9,9 @@ import org.springframework.stereotype.Service;
 import com.studybuddy.backend.dto.notebook.CanvasCreateRequest;
 import com.studybuddy.backend.dto.notebook.ChapterRequest;
 import com.studybuddy.backend.dto.notebook.ChapterResponse;
+import com.studybuddy.backend.entity.notebook.Canvas;
 import com.studybuddy.backend.entity.notebook.Chapter;
+import com.studybuddy.backend.repository.CanvasRepository;
 import com.studybuddy.backend.repository.ChapterRepository;
 import com.studybuddy.backend.utility.auth.AuthUtil;
 
@@ -15,11 +19,14 @@ import com.studybuddy.backend.utility.auth.AuthUtil;
 public class ChapterService {
 
     private final ChapterRepository chapterRepository;
+    private final CanvasRepository canvasRepository;
     private final CanvasService canvasService;
     private final AuthUtil authUtil;
 
-    public ChapterService(ChapterRepository chapterRepository, CanvasService canvasService, AuthUtil authUtil) {
+    public ChapterService(ChapterRepository chapterRepository, CanvasRepository canvasRepository,
+            CanvasService canvasService, AuthUtil authUtil) {
         this.chapterRepository = chapterRepository;
+        this.canvasRepository = canvasRepository;
         this.canvasService = canvasService;
         this.authUtil = authUtil;
     }
@@ -32,9 +39,12 @@ public class ChapterService {
         chapter = chapterRepository.save(chapter);
 
         CanvasCreateRequest canvasCreateRequest = new CanvasCreateRequest(chapter.getId(), 0);
-        canvasService.createCanvas(canvasCreateRequest);
+        var firstCanvas = canvasService.createCanvas(canvasCreateRequest);
 
-        return mapToResponse(chapter);
+        ChapterResponse res = mapToResponse(chapter);
+        res.setCanvases(List.of(firstCanvas));
+
+        return res;
     }
 
     // Fetch chapters for multiple notebooks
@@ -55,6 +65,22 @@ public class ChapterService {
 
         List<Chapter> chapters = chapterRepository.findAllByNotebookIdAndIsDeletedFalse(notebookId);
         return chapters.stream().map(this::mapToResponse).toList();
+    }
+
+    // Delete chapter
+    public void deleteChapter(String id) {
+        authUtil.getCurrentUserId();
+
+        List<String> chapterIds = new ArrayList<>();
+        chapterIds.add(id);
+
+        List<Canvas> canvases = canvasRepository.findAllByChapterIdInAndIsDeletedFalse(chapterIds);
+        for (Canvas canvas : canvases) {
+            canvas.setDeleted(true);
+            canvas.setDeletedAt(Instant.now());
+        }
+
+        canvasRepository.saveAll(canvases);
     }
 
     private ChapterResponse mapToResponse(Chapter chapter) {

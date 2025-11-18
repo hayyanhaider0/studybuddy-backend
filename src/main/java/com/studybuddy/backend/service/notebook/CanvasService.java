@@ -39,6 +39,11 @@ public class CanvasService {
         return canvases.stream().map(this::mapToResponse).toList();
     }
 
+    public void deleteCanvas(String id) {
+        authUtil.getCurrentUserId();
+        canvasRepository.deleteById(id);
+    }
+
     private CanvasResponse mapToResponse(Canvas canvas) {
         CanvasResponse res = new CanvasResponse();
         res.setId(canvas.getId());

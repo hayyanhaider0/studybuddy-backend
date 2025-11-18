@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,5 +41,11 @@ public class ChapterController {
 
         List<ChapterResponse> data = chapterService.getChaptersForRecentNotebooks(req.getNotebookIds());
         return ResponseEntity.ok(new ApiResponse<>(true, data, null, "Chapters fetched successfully."));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteChapter(@PathVariable String id) {
+        chapterService.deleteChapter(id);
+        return ResponseEntity.ok(new ApiResponse<Void>(true, null, null, "Chapter " + id + " deleted successfully."));
     }
 }
