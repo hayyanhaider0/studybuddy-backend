@@ -20,7 +20,7 @@ public class JwtUtil {
     private final long ACCESS_TOKEN_EXPIRY = 60 * 60 * 1000; // 1 hour
     private final long REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-    public JwtUtil(@Value("${JWT_SECRET}") String secret) {
+    public JwtUtil(@Value("${jwt.secret}") String secret) {
         byte[] decodedKey = Base64.getDecoder().decode(secret);
         secretKey = Keys.hmacShaKeyFor(decodedKey);
     }

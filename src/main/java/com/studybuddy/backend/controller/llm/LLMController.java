@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.studybuddy.backend.dto.auth.ApiResponse;
 import com.studybuddy.backend.dto.llm.GenerateRequest;
+import com.studybuddy.backend.dto.llm.GenerateResponse;
 import com.studybuddy.backend.exception.ResourceNotFoundException;
 import com.studybuddy.backend.service.llm.LLMService;
 
@@ -21,26 +22,9 @@ public class LLMController {
     }
 
     @PostMapping("/generate")
-    public ResponseEntity<ApiResponse<Void>> generate(@RequestBody GenerateRequest req) {
-        String taskType = req.getTaskType();
+    public ResponseEntity<ApiResponse<GenerateResponse>> generate(@RequestBody GenerateRequest req) {
+        GenerateResponse resData = llmService.generate(req);
 
-        switch (taskType) {
-            case "notes":
-                llmService.generateNotes();
-                break;
-            case "flashcards":
-                llmService.generateFlashcards();
-                break;
-            case "quiz":
-                llmService.generateQuiz();
-                break;
-            case "exam":
-                llmService.generateExam();
-                break;
-            default:
-                throw new ResourceNotFoundException("Task type: " + taskType + " not found!");
-        }
-
-        return ResponseEntity.ok(new ApiResponse<Void>(true, null, null, taskType));
+        return ResponseEntity.ok(new ApiResponse<GenerateResponse>(true, resData, null, "Generated successfully."));
     }
 }
