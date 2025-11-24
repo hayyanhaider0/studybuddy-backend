@@ -6,10 +6,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.studybuddy.backend.dto.auth.ApiResponse;
+import com.studybuddy.backend.dto.ApiResponse;
 import com.studybuddy.backend.dto.llm.GenerateRequest;
 import com.studybuddy.backend.dto.llm.GenerateResponse;
-import com.studybuddy.backend.exception.ResourceNotFoundException;
 import com.studybuddy.backend.service.llm.LLMService;
 
 @RestController

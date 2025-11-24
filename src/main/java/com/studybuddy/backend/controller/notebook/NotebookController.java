@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.studybuddy.backend.dto.auth.ApiResponse;
+import com.studybuddy.backend.dto.ApiResponse;
 import com.studybuddy.backend.dto.notebook.NotebookRequest;
 import com.studybuddy.backend.dto.notebook.NotebookResponse;
 import com.studybuddy.backend.service.notebook.NotebookService;
