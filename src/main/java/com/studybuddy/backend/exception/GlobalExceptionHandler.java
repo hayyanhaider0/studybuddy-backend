@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import com.mongodb.DuplicateKeyException;
-import com.studybuddy.backend.dto.auth.ApiResponse;
+import com.studybuddy.backend.dto.ApiResponse;
 import com.studybuddy.backend.enums.ErrorCode;
 
 import lombok.extern.slf4j.Slf4j;

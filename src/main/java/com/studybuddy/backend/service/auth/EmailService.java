@@ -1,6 +1,5 @@
 package com.studybuddy.backend.service.auth;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -8,11 +7,13 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class EmailService {
-    @Autowired
     private JavaMailSender mailSender;
-
-    @Value("${STUDY_BUDDY_USERNAME}")
     private String senderEmail;
+
+    public EmailService(JavaMailSender mailSender, @Value("${spring.mail.username}") String senderEmail) {
+        this.mailSender = mailSender;
+        this.senderEmail = senderEmail;
+    }
 
     public void sendCodeEmail(String email, String code, String purpose) {
         try {

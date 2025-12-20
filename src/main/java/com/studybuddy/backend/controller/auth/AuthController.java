@@ -4,17 +4,19 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.studybuddy.backend.dto.auth.ApiResponse;
+import com.studybuddy.backend.dto.ApiResponse;
 import com.studybuddy.backend.dto.auth.AuthResponse;
 import com.studybuddy.backend.dto.auth.CodeRequest;
 import com.studybuddy.backend.dto.auth.LoginRequest;
 import com.studybuddy.backend.dto.auth.ResetPasswordRequest;
 import com.studybuddy.backend.dto.auth.SignupRequest;
+import com.studybuddy.backend.dto.auth.UpdateUserRequest;
 import com.studybuddy.backend.service.auth.AuthService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -94,5 +96,13 @@ public class AuthController {
         ApiResponse<AuthResponse> res = new ApiResponse<AuthResponse>(true, authResponse, null,
                 "Token refreshed successfully.");
         return ResponseEntity.ok(res);
+    }
+
+    @PatchMapping("/")
+    @Operation(summary = "Update user details", description = "Updates the user's preferences/account details.")
+    public ResponseEntity<ApiResponse<Void>> updateUser(@RequestBody UpdateUserRequest req) {
+        System.out.println("Request:\n" + req);
+        authService.updateUser(req);
+        return ResponseEntity.ok(new ApiResponse<Void>(false, null, null, "User updated successfully."));
     }
 }

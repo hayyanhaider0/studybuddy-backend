@@ -1,4 +1,4 @@
-package com.studybuddy.backend.dto.auth;
+package com.studybuddy.backend.dto;
 
 import com.studybuddy.backend.enums.ErrorCode;
 

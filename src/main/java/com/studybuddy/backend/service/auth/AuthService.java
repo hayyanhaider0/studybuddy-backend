@@ -2,10 +2,14 @@ package com.studybuddy.backend.service.auth;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -13,7 +17,9 @@ import com.mongodb.DuplicateKeyException;
 import com.studybuddy.backend.dto.auth.AuthResponse;
 import com.studybuddy.backend.dto.auth.LoginRequest;
 import com.studybuddy.backend.dto.auth.SignupRequest;
+import com.studybuddy.backend.dto.auth.UpdateUserRequest;
 import com.studybuddy.backend.entity.auth.User;
+import com.studybuddy.backend.entity.auth.embedded.UserPreferences;
 import com.studybuddy.backend.entity.auth.embedded.UserSecurity;
 import com.studybuddy.backend.exception.EmailNotVerifiedException;
 import com.studybuddy.backend.exception.InvalidRequestException;
@@ -22,6 +28,7 @@ import com.studybuddy.backend.exception.ResourceAlreadyExistsException;
 import com.studybuddy.backend.exception.ResourceNotFoundException;
 import com.studybuddy.backend.exception.UserAlreadyVerifiedException;
 import com.studybuddy.backend.repository.UserRepository;
+import com.studybuddy.backend.utility.auth.AuthUtil;
 import com.studybuddy.backend.utility.auth.JwtUtil;
 import com.studybuddy.backend.utility.auth.VerificationCodeGenerator;
 
@@ -30,20 +37,20 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 public class AuthService {
-    @Autowired
     private UserRepository userRepository;
-
-    @Autowired
     private PasswordEncoder passwordEncoder;
-
-    @Autowired
     private EmailService emailService;
-
-    @Autowired
     private VerificationCodeGenerator codeGenerator;
-
-    @Autowired
     private JwtUtil jwtUtil;
+
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService,
+            VerificationCodeGenerator codeGenerator, JwtUtil jwtUtil, AuthUtil authUtil) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
+        this.codeGenerator = codeGenerator;
+        this.jwtUtil = jwtUtil;
+    }
 
     private final int SECONDS_TO_HOUR = 3600;
     private final int SECONDS_TO_MINUTES = 60;
@@ -285,7 +292,51 @@ public class AuthService {
 
         // Return tokens with user info.
         return new AuthResponse(newAccessToken, newRefreshToken, user.getEmail(), user.getUsername(),
-                user.getDisplayName());
+                user.getDisplayName(), user.getOccupation(), user.getEducationLevel());
+    }
+
+    /**
+     * Updates the user entity.
+     * 
+     * @param req - User fields that need to be updated.
+     */
+    public void updateUser(UpdateUserRequest req) {
+        User user = userRepository.findByUsername(req.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User with username: " + req.getUsername() + " not found."));
+
+        // Copy non-null properties from DTO to User
+        BeanUtils.copyProperties(req, user, getNullPropertyNames(req));
+
+        // Handle nested object manually
+        if (req.getPreferences() != null) {
+            if (user.getPreferences() == null)
+                user.setPreferences(new UserPreferences());
+            BeanUtils.copyProperties(req.getPreferences(), user.getPreferences(),
+                    getNullPropertyNames(req.getPreferences()));
+        }
+
+        if (req.getSecurity() != null) {
+            if (user.getSecurity() == null)
+                user.setSecurity(new UserSecurity());
+            BeanUtils.copyProperties(req.getSecurity(), user.getSecurity(), getNullPropertyNames(req.getSecurity()));
+        }
+
+        userRepository.save(user);
+    }
+
+    // Utility to return property names that are null
+    private static String[] getNullPropertyNames(Object source) {
+        final BeanWrapper src = new BeanWrapperImpl(source);
+        java.beans.PropertyDescriptor[] pds = src.getPropertyDescriptors();
+
+        Set<String> emptyNames = new HashSet<>();
+        for (java.beans.PropertyDescriptor pd : pds) {
+            Object srcValue = src.getPropertyValue(pd.getName());
+            if (srcValue == null)
+                emptyNames.add(pd.getName());
+        }
+        return emptyNames.toArray(new String[0]);
     }
 
     /**
@@ -313,7 +364,8 @@ public class AuthService {
         String id = user.getId();
         String accessToken = jwtUtil.generateAccessToken(id);
         String refreshToken = jwtUtil.generateRefreshToken(id);
-        return new AuthResponse(accessToken, refreshToken, user.getEmail(), user.getUsername(), user.getDisplayName());
+        return new AuthResponse(accessToken, refreshToken, user.getEmail(), user.getUsername(), user.getDisplayName(),
+                user.getOccupation(), user.getEducationLevel());
     }
 
     /**

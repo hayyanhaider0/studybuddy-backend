@@ -6,7 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.studybuddy.backend.dto.auth.ApiResponse;
+import com.studybuddy.backend.dto.ApiResponse;
 import com.studybuddy.backend.dto.notebook.SyncRequest;
 import com.studybuddy.backend.service.notebook.SyncService;
 
