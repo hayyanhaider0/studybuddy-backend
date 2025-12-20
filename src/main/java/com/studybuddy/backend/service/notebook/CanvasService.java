@@ -72,6 +72,7 @@ public class CanvasService {
         CanvasResponse res = new CanvasResponse();
         res.setId(canvas.getId());
         res.setChapterId(canvas.getChapterId());
+        res.setNotebookId(canvas.getNotebookId());
         res.setOrder(canvas.getOrder());
         return res;
     }
