@@ -19,6 +19,9 @@ public class Canvas {
     private String id;
     @Indexed
     private String chapterId;
+    private String notebookId;
+    private String color;
+    private String pattern;
     @CreatedDate
     private Instant createdAt;
     @LastModifiedDate
@@ -28,8 +31,10 @@ public class Canvas {
     private boolean isDeleted = false;
     private Instant deletedAt;
 
-    public Canvas(String chapterId, int order) {
+    public Canvas(String chapterId, String notebookId, int order) {
         this.chapterId = chapterId;
+        this.notebookId = notebookId;
+        this.pattern = "solid";
         this.order = order;
     }
 }
