@@ -14,6 +14,8 @@ import lombok.NoArgsConstructor;
 public class CanvasCreateRequest {
     @NotBlank
     private String chapterId;
+    @NotBlank
+    private String notebookId;
     @NotNull
     @Min(0)
     @Max(100)

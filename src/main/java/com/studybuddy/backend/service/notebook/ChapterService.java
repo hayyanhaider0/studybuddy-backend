@@ -38,7 +38,7 @@ public class ChapterService {
         Chapter chapter = new Chapter(notebookId, req.getTitle(), req.getOrder());
         chapter = chapterRepository.save(chapter);
 
-        CanvasCreateRequest canvasCreateRequest = new CanvasCreateRequest(chapter.getId(), 0);
+        CanvasCreateRequest canvasCreateRequest = new CanvasCreateRequest(chapter.getId(), chapter.getNotebookId(), 0);
         var firstCanvas = canvasService.createCanvas(canvasCreateRequest);
 
         ChapterResponse res = mapToResponse(chapter);

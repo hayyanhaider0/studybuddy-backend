@@ -25,7 +25,7 @@ public class CanvasService {
     public CanvasResponse createCanvas(CanvasCreateRequest req) {
         authUtil.getCurrentUserId();
 
-        Canvas canvas = new Canvas(req.getChapterId(), req.getOrder());
+        Canvas canvas = new Canvas(req.getChapterId(), req.getNotebookId(), req.getOrder());
         canvas = canvasRepository.save(canvas);
         return mapToResponse(canvas);
     }
