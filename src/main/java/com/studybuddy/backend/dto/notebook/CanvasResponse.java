@@ -8,5 +8,6 @@ import lombok.NoArgsConstructor;
 public class CanvasResponse {
     private String id;
     private String chapterId;
+    private String notebookId;
     private int order;
 }
