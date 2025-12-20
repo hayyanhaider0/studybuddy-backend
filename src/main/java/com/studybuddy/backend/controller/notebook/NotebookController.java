@@ -47,8 +47,8 @@ public class NotebookController {
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> editNotebook(@PathVariable String id, @RequestBody NotebookRequest req) {
-        notebookService.editNotebook(id, req);
+    public ResponseEntity<ApiResponse<Void>> updateNotebook(@PathVariable String id, @RequestBody NotebookRequest req) {
+        notebookService.updateNotebook(id, req);
         return ResponseEntity.ok(new ApiResponse<Void>(true, null, null, "Notebook " + id + " updated successfully."));
     }
 

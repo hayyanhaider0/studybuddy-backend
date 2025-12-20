@@ -77,8 +77,8 @@ public class NotebookService {
         return notebooks.stream().map(Notebook::getId).toList();
     }
 
-    // Edit notebook
-    public void editNotebook(String id, NotebookRequest req) {
+    // Update notebook
+    public void updateNotebook(String id, NotebookRequest req) {
         String userId = authUtil.getCurrentUserId();
 
         Notebook notebook = notebookRepository.findByIdAndUserIdAndIsDeletedFalse(id, userId)

@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,6 +16,7 @@ import com.studybuddy.backend.dto.auth.ApiResponse;
 import com.studybuddy.backend.dto.notebook.CanvasCreateRequest;
 import com.studybuddy.backend.dto.notebook.CanvasFetchRequest;
 import com.studybuddy.backend.dto.notebook.CanvasResponse;
+import com.studybuddy.backend.dto.notebook.CanvasUpdateRequest;
 import com.studybuddy.backend.service.notebook.CanvasService;
 
 import jakarta.validation.Valid;
@@ -47,6 +49,13 @@ public class CanvasController {
 
         List<CanvasResponse> data = canvasService.getCanvasesByChapterId(req.getChapterIds());
         return ResponseEntity.ok(new ApiResponse<>(true, data, null, "Canvases fetched successfully."));
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> updateCanvas(@PathVariable String id,
+            @RequestBody CanvasUpdateRequest req) {
+        canvasService.updateCanvas(id, req);
+        return ResponseEntity.ok(new ApiResponse<Void>(true, null, null, "Canvas " + id + " updated successfully."));
     }
 
     @DeleteMapping("/{id}")
