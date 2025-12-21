@@ -73,6 +73,8 @@ public class CanvasService {
         res.setId(canvas.getId());
         res.setChapterId(canvas.getChapterId());
         res.setNotebookId(canvas.getNotebookId());
+        res.setColor(canvas.getColor());
+        res.setPattern(canvas.getPattern());
         res.setOrder(canvas.getOrder());
         return res;
     }

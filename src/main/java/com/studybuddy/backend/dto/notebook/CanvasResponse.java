@@ -9,5 +9,7 @@ public class CanvasResponse {
     private String id;
     private String chapterId;
     private String notebookId;
+    private String color;
+    private String pattern;
     private int order;
 }
