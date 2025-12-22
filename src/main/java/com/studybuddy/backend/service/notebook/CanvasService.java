@@ -39,7 +39,7 @@ public class CanvasService {
         Canvas canvas = canvasRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Canvas with ID " + id + " not found."));
 
-        if (req.getOrder() != -1) {
+        if (req.getOrder() != null) {
             canvas.setOrder(req.getOrder());
         }
 

@@ -17,5 +17,5 @@ public class CanvasUpdateRequest {
     private String pattern;
     @Min(-1)
     @Max(100)
-    private int order;
+    private Integer order;
 }
