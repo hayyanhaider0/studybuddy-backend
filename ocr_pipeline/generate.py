@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, Form
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from typing import Optional, List
 import json
 import tempfile
@@ -12,8 +12,11 @@ from PIL import Image
 import numpy as np
 import base64
 from google import genai
+from google.genai import types
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+
 
 class ChapterCanvas(BaseModel):
     chapterName: str
@@ -43,6 +46,80 @@ app.add_middleware(
 
 
 client = genai.Client(api_key=GEMINI_API_KEY)
+@app.post('/ai/generate')
+async def generate_notes(req: GenerateRequest):
+    print(f"Received request for task: {req.taskType}")
+
+    # A. Construct the Contextual Prompt
+    # We build a text prompt that incorporates all the user's metadata and options.
+    system_instruction = (
+        f"You are an AI assistant helping a user with the occupation '{req.occupation}' "
+        f"and education level '{req.educationLevel}'.\n"
+        f"The user is studying a notebook named '{req.notebookName}'.\n"
+        f"Your task is to generate: {req.taskType}.\n\n"
+    )
+
+    # Add specific formatting options if they exist
+    if req.options:
+        system_instruction += "Please adhere to the following constraints:\n"
+        for key, value in req.options.items():
+            system_instruction += f"- {key}: {value}\n"
+    
+    # B. Prepare the Payload for Gemini
+    # We will build a list of content parts. We interleave text (chapter headers) 
+    # and images so the model knows which image belongs to which chapter.
+    gemini_contents = []
+    
+    # Add the system instruction first
+    gemini_contents.append(system_instruction)
+
+    total_images = 0
+    
+    for chapter in req.chaptersWithCanvases:
+        # Add a text separator for the chapter
+        gemini_contents.append(f"\n\n--- Start of Chapter: {chapter.chapterName} ---\n")
+        gemini_contents.append("The following images are the handwritten notes/canvases for this chapter:")
+
+        # Process all canvases (images) for this chapter
+        for b64_img in chapter.canvases:
+            try:
+                # 1. Decode Base64 to bytes
+                img_bytes = b64_img
+                
+                # 2. Create the Gemini Part object
+
+                image_part = types.Part.from_bytes(
+                    data=img_bytes,
+                    mime_type="image/jpeg" 
+                )
+                gemini_contents.append(image_part)
+                total_images += 1
+            except Exception as e:
+                print(f"Error decoding image in chapter {chapter.chapterName}: {e}")
+                
+    
+    gemini_contents.append("\n\nBased on the images and context above, please generate the response.")
+
+    print(f"Sending request to Gemini with {total_images} images...")
+
+    try:
+        
+        response = client.models.generate_content(
+            model="gemini-2.5-flash", 
+            contents=gemini_contents
+        )
+        
+        generated_text = response.text
+        
+    except Exception as e:
+        print(f"Gemini API Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return {
+        "message": generated_text,
+        "taskType": req.taskType
+    }
+
 
 @app.get('/')
 def ping():
@@ -153,25 +230,7 @@ async def analyze_image_layout_mode2(session: aiohttp.ClientSession, image_str: 
 
 
 
-@app.post('/ai/generate')
-async def generate_notes(req: GenerateRequest):
-    print('Received request')
-    # print(req.model_dump())
-    
-    
-    image_strings_base64 = []
-    for chapter in req.chaptersWithCanvases:
-        for canvas in chapter.canvases:
-            image_strings_base64.append(canvas)
 
-    image_text = await upload_images2(image_strings_base64)
-    
-    print(image_text)
-            
-        
-    
-    
-    return {"message": "OK", "taskType": req.taskType}
 
 
     

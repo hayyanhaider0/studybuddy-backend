@@ -16,8 +16,9 @@ public class LLMService {
     private String generateServerUrl;
 
     public GenerateResponse generate(GenerateRequest req) {
-        ResponseEntity<GenerateResponse> res = restTemplate.postForEntity(generateServerUrl + "ai/generate", req,
-                GenerateResponse.class);
+        ResponseEntity<GenerateResponse> res = restTemplate.postForEntity(generateServerUrl + "ai/generate", req, GenerateResponse.class);
+
+        System.out.println(res.getBody().getMessage());
 
         return res.getBody();
     }
