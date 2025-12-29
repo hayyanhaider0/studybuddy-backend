@@ -51,11 +51,10 @@ public class CanvasController {
         return ResponseEntity.ok(new ApiResponse<>(true, data, null, "Canvases fetched successfully."));
     }
 
-    @PatchMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> updateCanvas(@PathVariable String id,
-            @RequestBody CanvasUpdateRequest req) {
-        canvasService.updateCanvas(id, req);
-        return ResponseEntity.ok(new ApiResponse<Void>(true, null, null, "Canvas " + id + " updated successfully."));
+    @PatchMapping
+    public ResponseEntity<ApiResponse<Void>> updateCanvas(@RequestBody CanvasUpdateRequest req) {
+        canvasService.updateCanvas(req);
+        return ResponseEntity.ok(new ApiResponse<Void>(true, null, null, "Canvases updated successfully."));
     }
 
     @DeleteMapping("/{id}")

@@ -10,5 +10,7 @@ import com.studybuddy.backend.entity.notebook.Canvas;
 public interface CanvasRepository extends MongoRepository<Canvas, String> {
     Optional<Canvas> findByIdAndIsDeletedFalse(String id);
 
+    List<Canvas> findAllByIdInAndIsDeletedFalse(List<String> ids);
+
     List<Canvas> findAllByChapterIdInAndIsDeletedFalse(List<String> chapterId);
 }

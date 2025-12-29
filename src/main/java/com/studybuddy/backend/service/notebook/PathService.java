@@ -24,7 +24,7 @@ public class PathService {
 
         for (PathRequest r : req) {
             Path path = new Path(r.getCanvasId(), r.getPoints(), r.getBrushType(), r.getColor(),
-                    r.getBaseWidth(), r.getOpacity());
+                    r.getSizePresetIndex(), r.getOpacity());
             Path pathWithId = pathRepository.save(path);
             resData.add(new PathCreateResponse(pathWithId.getId(), r.getTempId()));
         }
@@ -46,7 +46,6 @@ public class PathService {
 
     private PathResponse mapToResponse(Path path) {
         return new PathResponse(path.getId(), path.getCanvasId(), path.getPoints(), path.getBrushType(),
-                path.getBaseWidth(),
-                path.getOpacity(), path.getColor());
+                path.getSizePresetIndex(), path.getOpacity(), path.getColor());
     }
 }

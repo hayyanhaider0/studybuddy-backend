@@ -33,25 +33,29 @@ public class CanvasService {
     }
 
     // Update canvas
-    public void updateCanvas(String id, CanvasUpdateRequest req) {
+    public void updateCanvas(CanvasUpdateRequest req) {
         authUtil.getCurrentUserId();
 
-        Canvas canvas = canvasRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Canvas with ID " + id + " not found."));
+        List<Canvas> canvases = canvasRepository.findAllByIdInAndIsDeletedFalse(req.getIds());
 
-        if (req.getOrder() != null) {
-            canvas.setOrder(req.getOrder());
+        if (canvases.isEmpty())
+            throw new ResourceNotFoundException("No canvases found.");
+
+        for (Canvas canvas : canvases) {
+            if (req.getOrder() != null) {
+                canvas.setOrder(req.getOrder());
+            }
+
+            if (req.getColor() != null) {
+                canvas.setColor(req.getColor());
+            }
+
+            if (req.getPattern() != null) {
+                canvas.setPattern(req.getPattern());
+            }
         }
 
-        if (req.getColor() != null) {
-            canvas.setColor(req.getColor());
-        }
-
-        if (req.getPattern() != null) {
-            canvas.setPattern(req.getPattern());
-        }
-
-        canvasRepository.save(canvas);
+        canvasRepository.saveAll(canvases);
     }
 
     // Fetch canvases by chapter IDs

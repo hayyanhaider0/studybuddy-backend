@@ -17,7 +17,7 @@ public class PathResponse {
     private String canvasId;
     private List<Point> points;
     private BrushType brushType;
-    private double baseWidth;
+    private int sizePresetIndex;
     private double opacity;
     private String color;
 }
