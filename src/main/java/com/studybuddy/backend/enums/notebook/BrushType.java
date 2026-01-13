@@ -4,4 +4,5 @@ public enum BrushType {
     PEN,
     PENCIL,
     HIGHLIGHTER,
+    ERASER
 }
